@@ -1,0 +1,17 @@
+meta {
+  name: Split Pdf
+  type: http
+  seq: 17
+}
+
+post {
+  url: http://localhost:5000/api/pdf/split
+  body: multipartForm
+  auth: none
+}
+
+body:multipart-form {
+  file: @file()
+  userId: user123
+  pageRanges: 1-2,4-8
+}

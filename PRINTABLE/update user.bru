@@ -1,0 +1,17 @@
+meta {
+  name: update user
+  type: http
+  seq: 4
+}
+
+patch {
+  url: http://localhost:5000/api/user/1
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+      "address":"ll"
+  }
+}

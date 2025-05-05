@@ -1,0 +1,48 @@
+meta {
+  name: create order
+  type: http
+  seq: 5
+}
+
+post {
+  url: http://localhost:5000/api/order/
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "userId": "1",
+    "merchantId": "1",
+    "status": "pending",
+    "totalAmount": 320,
+    "paymentMethod": "Credit Card",
+    "fulfillmentType": "takeaway",
+    "state": null,
+    "city": null,
+    "address": null,
+    "latitude": null,
+    "longitude": null,
+    "documents": [
+      {
+        "fileName": "research_paper.pdf",
+        "fileUrl": "https://example.com/research_paper.pdf",
+        "copies": 2,
+        "colorType": "black_and_white",
+        "paperType": "A4",
+        "printType": "front",
+        "pageDirection": "vertical"
+      },
+      {
+        "fileName": "resume.pdf",
+        "fileUrl": "https://example.com/resume.pdf",
+        "copies": 1,
+        "colorType": "color",
+        "paperType": "Letter",
+        "printType": "front_and_back",
+        "pageDirection": "horizontal"
+      }
+    ]
+  }
+  
+}

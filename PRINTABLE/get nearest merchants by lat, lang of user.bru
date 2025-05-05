@@ -1,0 +1,16 @@
+meta {
+  name: get nearest merchants by lat, lang of user
+  type: http
+  seq: 10
+}
+
+get {
+  url: http://localhost:5000/api/user/nearest-merchants?lat=21.106462815407394&long=79.00301221285966
+  body: none
+  auth: none
+}
+
+params:query {
+  lat: 21.106462815407394
+  long: 79.00301221285966
+}

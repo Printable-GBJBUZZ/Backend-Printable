@@ -1,0 +1,47 @@
+meta {
+  name: upload file
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:5000/api/file/upload
+  body: multipartForm
+  auth: none
+}
+
+params:query {
+  ~: 
+}
+
+body:multipart-form {
+  file: @file(postman-cloud:///1efa84e9-1651-4110-a751-36813db61c52)
+  ownerId: 1
+}
+
+docs {
+  ### POST /api/file/upload
+  
+  This endpoint allows the user to upload a file.
+  
+  #### Request Body
+  
+  - `file` (file): The file to be uploaded.
+      
+  
+  #### Response
+  
+  The response is in JSON format with the following schema:
+  
+  ``` json
+  {
+    "type": "object",
+    "properties": {
+      "error": {
+        "type": "string"
+      }
+    }
+  }
+  
+   ```
+}

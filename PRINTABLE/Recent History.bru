@@ -1,0 +1,15 @@
+meta {
+  name: Recent History
+  type: http
+  seq: 18
+}
+
+get {
+  url: http://localhost:5000/api/pdf/history
+  body: multipartForm
+  auth: none
+}
+
+body:multipart-form {
+  userId: user123
+}
