@@ -1,21 +1,26 @@
 {
-  "dependencies": {
-    "@aws-sdk/client-s3": "^3.758.0",
-    "@clerk/types": "^4.47.0",
-    "@neondatabase/serverless": "^0.10.4",
-    "@types/express": "^5.0.0",
-    "axios": "^1.8.4",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "drizzle-orm": "^0.40.0",
-    "express": "^4.21.2",
-    "morgan": "^1.10.0",
-    "multer": "^1.4.5-lts.1",
-    "multer-s3": "^3.0.1",
-    "pusher": "^5.2.0",
-    "svix": "^1.61.4"
+  "$schema": "https://deno.land/x/deno/cli/schemas/config-file.v1.json",
+  "compilerOptions": {
+    "lib": ["deno.ns", "deno.unstable", "esnext", "dom", "dom.iterable"]
   },
-  "devDependencies": {
-    "drizzle-kit": "^0.30.5"
+  "imports": {
+    "express": "npm:express@4.18.2",
+    "cors": "npm:cors@2.8.5",
+    "morgan": "npm:morgan@1.10.0",
+    "@std/dotenv": "jsr:@std/dotenv@^0.225.3",
+    "@aws-sdk/client-s3": "npm:@aws-sdk/client-s3@3.645.0",
+    "@aws-sdk/s3-request-presigner": "npm:@aws-sdk/s3-request-presigner@3.645.0",
+    "pdf-lib": "npm:pdf-lib@1.17.1"
+  },
+  "tasks": {
+    "dev": "deno run --allow-all --watch main.ts",
+    "start": "deno run --allow-net --allow-env --allow-read main.ts",
+    "cache": "deno cache --reload main.ts"
+  },
+  "nodeModulesDir": true,
+  "lint": {
+    "rules": {
+      "tags": ["recommended"]
+    }
   }
 }
