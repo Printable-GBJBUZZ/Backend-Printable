@@ -1,5 +1,7 @@
 import "jsr:@std/dotenv/load";
 import { GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { EsignService, FilePayload } from "../services/esignService.ts";
+const esignService = new EsignService();
 import multer from "multer";
 import multerS3 from "multer-s3";
 import s3 from "../configs/s3.ts";
@@ -20,14 +22,43 @@ const upload = multer({
 }).single("file");
 
 export const uploadFile = (req: any, res: any) => {
-  upload(req, res, (err: any) => {
+  upload(req, res, async (err: any) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json({
-      message: "File uploaded successfully",
-      fileUrl: req.file.location,
-      fileId: req.file.key,
-    });
+
+    if (!req.file?.location) {
+      return res.status(400).json({ error: "File upload failed" });
+    }
+
+    const { ownerId } = req.body;
+    if (!ownerId) {
+      return res.status(400).json({ error: "ownerId is required" });
+    }
     console.log(req.file);
+
+    const payload: FilePayload = {
+      ownerId,
+      fileName: req.file.originalname,
+      fileKey: req.file.location,
+      fileSize: req.file.size,
+      fileType: req.file.mimetype,
+    };
+
+    try {
+      // create uploaded file entry in database
+      const fileCreated = await esignService.createFile(payload);
+      return res.json({
+        message: "File uploaded successfully",
+        fileUrl: req.file.location,
+      });
+    } catch (error) {
+      console.error("Database save failed. Rolling back AWS upload...", error);
+
+      //if file create Failed in Database ( Rollback: Delete file from AWS)
+      await deleteFile({ params: { filename: req.file.key } }, res);
+      return res
+        .status(500)
+        .json({ error: "File upload failed due to database error" });
+    }
   });
 };
 
