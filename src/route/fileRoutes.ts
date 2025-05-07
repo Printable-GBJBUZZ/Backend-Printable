@@ -3,11 +3,14 @@ import {
     uploadFile,
     getFile,
     deleteFile,
+    listFiles,
 } from "../controller/fileController.ts";
 
 const router = express.Router();
 
 // Route to AWS S3
+
+router.get("/", listFiles)
 
 router.post("/upload", uploadFile);
 
