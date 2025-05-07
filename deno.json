@@ -1,9 +1,26 @@
 {
-    "tasks": {
-        "dev": "deno run --allow-all --watch main.ts"
-    },
-    "imports": {
-        "@std/assert": "jsr:@std/assert@1",
-        "@std/dotenv": "jsr:@std/dotenv@^0.225.3"
+  "$schema": "https://deno.land/x/deno/cli/schemas/config-file.v1.json",
+  "compilerOptions": {
+    "lib": ["deno.ns", "deno.unstable", "esnext", "dom", "dom.iterable"]
+  },
+  "imports": {
+    "express": "npm:express@4.18.2",
+    "cors": "npm:cors@2.8.5",
+    "morgan": "npm:morgan@1.10.0",
+    "@std/dotenv": "jsr:@std/dotenv@^0.225.3",
+    "@aws-sdk/client-s3": "npm:@aws-sdk/client-s3@3.645.0",
+    "@aws-sdk/s3-request-presigner": "npm:@aws-sdk/s3-request-presigner@3.645.0",
+    "pdf-lib": "npm:pdf-lib@1.17.1"
+  },
+  "tasks": {
+    "dev": "deno run --allow-all --watch main.ts",
+    "start": "deno run --allow-net --allow-env --allow-read main.ts",
+    "cache": "deno cache --reload main.ts"
+  },
+  "nodeModulesDir": "auto",
+  "lint": {
+    "rules": {
+      "tags": ["recommended"]
     }
+  }
 }
