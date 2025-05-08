@@ -99,24 +99,29 @@ export const deleteFile = async (req: any, res: any) => {
   }
 };
 
-
-
 // list file
 export const listFiles = async (req: any, res: any) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const pageSize = parseInt(req.query.limit) || 10;
-    const folderName = req.query.folderName || ""
-    const sortBy = req.query.sort || "id"
-    const type = req.query.typeFilter || ""
+    const folderName = req.query.folderName || "";
+    const sortBy = req.query.sort || "id";
+    const type = req.query.typeFilter || "";
     const ownerId = req.query.ownerId || "";
 
     const filesService = new FilesService();
-    
-    const result = await filesService.getFiles(page, pageSize, folderName, {
-      column: sortBy,
-      direction: "asc"
-    }, type , ownerId);
+
+    const result = await filesService.getFiles(
+      page,
+      pageSize,
+      folderName,
+      {
+        column: sortBy,
+        direction: "asc",
+      },
+      type,
+      ownerId,
+    );
 
     res.json(result);
   } catch (err: any) {
