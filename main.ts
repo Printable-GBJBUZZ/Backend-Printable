@@ -1,19 +1,24 @@
+import { Application } from "https://deno.land/x/oak@v12.6.1/mod.ts";
+import { oakCors } from "https://deno.land/x/cors@v1.2.2/mod.ts";
 import "jsr:@std/dotenv/load";
+import { fileConversionRouter } from "./src/route/fileConversionRoutes.ts";
 
-import express from "express";
-import cors from "cors";
-import morgan from "morgan";
-import errorHandler from "./mainErrorHandler.ts";
-import Routes from "./src/route/index.ts";
-const app = express();
 
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(morgan("dev"));
 
-app.use("/api", Routes);
 
-app.use(errorHandler);
-const PORT = Deno.env.get("PORT") || 5000;
-app.listen(PORT, () => console.log(`Server running on the port ${PORT}`));
+const app = new Application();
+
+app.use(async (ctx, next) => {
+  console.log(`${ctx.request.method} ${ctx.request.url.pathname}`);
+  await next();
+});
+
+app.use(oakCors());
+app.use(fileConversionRouter.routes());
+app.use(fileConversionRouter.allowedMethods());
+
+
+
+const PORT = 5002;
+console.log(`Server running on port ${PORT}`);
+await app.listen({ port: PORT });
