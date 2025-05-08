@@ -1,0 +1,21 @@
+meta {
+  name: signRequest
+  type: http
+  seq: 11
+}
+
+post {
+  url: http://localhost:5000/api/esign/signRequest
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "requestedBy": 1,
+    "fileIds": [1],
+    "signers_email": ["rp207045@gmail.com"],
+    "link": "https://blog-storage-printable.s3.us-east-1.amazonaws.com/documents/1743845939377_7857_2.jpg"
+  }
+  
+}

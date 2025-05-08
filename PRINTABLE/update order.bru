@@ -1,0 +1,17 @@
+meta {
+  name: update order
+  type: http
+  seq: 6
+}
+
+patch {
+  url: http://localhost:5000/api/order/26748f2e-29f3-4705-861a-52ba84e90618
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+      "status":"delivered"
+  }
+}
