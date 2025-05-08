@@ -1,4 +1,5 @@
 import express from "express";
+import reviewRoutes from './reviewRoutes.ts';
 import {
     uploadFile,
     getFile,
@@ -6,6 +7,8 @@ import {
 } from "../controller/fileController.ts";
 
 const router = express.Router();
+
+router.use('/', reviewRoutes);
 
 // Route to AWS S3
 
