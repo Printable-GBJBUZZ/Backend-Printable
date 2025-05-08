@@ -1,0 +1,18 @@
+meta {
+  name: Fetch Reviews
+  type: http
+  seq: 19
+}
+
+get {
+  url: http://localhost:5000/api/reviews
+  query: {
+    merchantId: merchant_456
+  }
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}

@@ -2,7 +2,6 @@
 import { Request, Response, NextFunction } from "express";
 import { WebhookService } from "../services/webhookService.ts";
 import { UserPayloadType } from "../types/webhook/user.ts";
-
 export const createUser = async (
   req: Request<{}, {}, UserPayloadType>,
   res: Response,
