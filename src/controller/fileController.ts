@@ -5,6 +5,7 @@ const esignService = new EsignService();
 import multer from "multer";
 import multerS3 from "multer-s3";
 import s3 from "../configs/s3.ts";
+import { FilesService } from "../services/filesService.ts";
 
 console.log(Deno.env.get("BUCKET_NAME"));
 
@@ -93,6 +94,31 @@ export const deleteFile = async (req: any, res: any) => {
     await s3.send(command);
 
     res.json({ message: "File deleted successfully" });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+
+// list file
+export const listFiles = async (req: any, res: any) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const pageSize = parseInt(req.query.limit) || 10;
+    const folderName = req.query.folderName || ""
+    const sortBy = req.query.sort || "id"
+    const type = req.query.typeFilter || ""
+    const ownerId = req.query.ownerId || "";
+
+    const filesService = new FilesService();
+    
+    const result = await filesService.getFiles(page, pageSize, folderName, {
+      column: sortBy,
+      direction: "asc"
+    }, type , ownerId);
+
+    res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
