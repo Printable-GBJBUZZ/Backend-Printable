@@ -2,6 +2,7 @@
 import { Request, Response } from "express";
 import { UserPayloadType } from "../types/webhook/user.ts";
 import { users } from "../db/schema.ts";
+import { createHash } from "node:crypto";
 import { db } from "../configs/db.ts";
 import { eq } from "drizzle-orm";
 
@@ -10,18 +11,27 @@ export class WebhookService {
     req: Request<{}, {}, UserPayloadType>,
     res: Response
   ): Promise<Response> {
-    const payload = req.body; 
+    const payload = req.body;
     console.log(payload);
 
     switch (payload.type) {
       case "user.created": {
         try {
           const userData = payload.data;
+          //signId per user based on their email
+          const email = userData.email_addresses[0]?.email_address || "";
+          const hashBuffer = createHash("sha256").update(email).digest();
+          const signingKey = parseInt(
+            hashBuffer.toString("hex").slice(0, 10),
+            16
+          );
+          const sign_id = String(signingKey % 10000000000);
           const response = await db.insert(users).values({
             id: userData.id,
             name: `${userData.first_name} ${userData.last_name}`,
-            email: userData.email_addresses[0]?.email_address || "",
+            email: email,
             phone: userData.phone_numbers[0],
+            signId: sign_id,
           });
 
           return res.status(201).json({
@@ -56,9 +66,9 @@ export class WebhookService {
             .set({
               id: userData.id,
               name: `${userData.first_name} ${userData.last_name}`,
-              email: userData.email_addresses[0]?.email_address || "", 
+              email: userData.email_addresses[0]?.email_address || "",
               phone: userData.phone_numbers[0],
-              updatedAt:new Date()
+              updatedAt: new Date(),
             })
             .where(eq(users.id, payload.data.id));
 

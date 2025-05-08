@@ -22,11 +22,13 @@ export interface esignRequestPayload {
   link: string;
 }
 export interface FilePayload {
+  id: string;
   ownerId: string;
   fileName: string;
   fileKey: string;
   fileSize: number;
   fileType: string;
+  fileHash: string;
 }
 export interface EmailPayload {
   from: string;

@@ -74,7 +74,7 @@ export class UserService {
     const nearestMerchants = await nearestMerchantsQuery.execute();
     const distanceMatrix = await getDistanceMatrix(
       [Number(lat), Number(long)],
-      nearestMerchants,
+      nearestMerchants
     );
     return distanceMatrix;
   }

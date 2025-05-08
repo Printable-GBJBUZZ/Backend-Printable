@@ -16,6 +16,6 @@
     "svix": "^1.61.4"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.30.5"
+    "drizzle-kit": "^0.30.6"
   }
 }

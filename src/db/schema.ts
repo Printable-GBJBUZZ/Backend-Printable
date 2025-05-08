@@ -6,6 +6,7 @@ import {
   timestamp,
   integer,
   jsonb,
+  foreignKey,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { relations } from "drizzle-orm";
@@ -17,6 +18,7 @@ export const users = pgTable("users", {
   phone: text("phone").unique(),
   state: text("state"),
   city: text("city"),
+  signId: text("sign_id").unique(),
   address: text("address"),
   latitude: text("latitude"),
   longitude: text("longitude"),
@@ -95,7 +97,7 @@ export const ordersRelations = relations(orders, ({ one }) => ({
 //   }
 // ]
 export const files = pgTable("files", {
-  id: serial("id").primaryKey(),
+  id: text("id").primaryKey(),
   ownerId: text("owner_id")
     .notNull()
     .references(() => users.id, {
@@ -105,11 +107,12 @@ export const files = pgTable("files", {
   fileKey: text("file_key").notNull(), // file access url
   fileSize: integer("file_size").notNull(),
   fileType: text("file_type").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  fileHash: text("file_hash").notNull(),
   folderId: text("folder_id").references(() => folders.id, {
     onDelete: "cascade",
   }),
-  expiresAt: timestamp("expiresAt"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const signRequests = pgTable("signature_requests", {
@@ -118,6 +121,7 @@ export const signRequests = pgTable("signature_requests", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }), // Requested owner
   status: text("status").default("pending").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -150,7 +154,7 @@ export const folders = pgTable(
   (table) => [
     // CREATE INDEX ON folders(owner_id);
     index("folders_owner_id_idx").on(table.ownerId), // :contentReference[oaicite:2]{index=2}
-  ],
+  ]
 );
 export const filesRelations = relations(files, ({ one }) => ({
   folder: one(folders, {
@@ -176,9 +180,10 @@ export const folderRelations = relations(folders, ({ one, many }) => ({
   subfolders: many(folders),
   // files: many(files),    // if you add a files.folderId FK
 }));
+
 export const signRequestedFiles = pgTable("sign_requested_files", {
   id: serial("id").primaryKey(),
-  fileId: integer("file_id")
+  fileId: text("file_id")
     .notNull()
     .references(() => files.id, {
       onDelete: "cascade",
@@ -200,7 +205,9 @@ export const signatureStatus = pgTable("signature_status", {
       onDelete: "cascade",
     }),
 
-  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }), // Nullable for unregistered users
+  signId: text("sign_id").references(() => users.signId, {
+    onDelete: "cascade",
+  }), // Nullable for unregistered users
 
   email: text("email"), // Store email for unregistered users
 
@@ -208,7 +215,8 @@ export const signatureStatus = pgTable("signature_status", {
 
   status: text("status").default("pending"), // "pending" | "signed"
 
-  signedAt: timestamp("signed_at"),
+  signedAt: timestamp("signed_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // one user can have multiple files
@@ -234,5 +242,33 @@ export const signRequestWithsignaturesRelations = relations(
   signRequests,
   ({ many }) => ({
     signatures: many(signatureStatus),
-  }),
+  })
+);
+export const reviews = pgTable(
+  "reviews",
+  {
+    id: serial().primaryKey().notNull(),
+    userId: text("user_id").notNull(),
+    merchantId: text("merchant_id").notNull(),
+    rating: integer().notNull(),
+    comment: text(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [users.id],
+      name: "reviews_user_id_users_id_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.merchantId],
+      foreignColumns: [merchants.id],
+      name: "reviews_merchant_id_merchants_id_fk",
+    }).onDelete("cascade"),
+  ]
 );

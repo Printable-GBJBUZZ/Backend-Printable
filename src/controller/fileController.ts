@@ -1,80 +1,109 @@
 import "jsr:@std/dotenv/load";
-import { GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import {
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+} from "@aws-sdk/client-s3";
+import { createHash } from "node:crypto";
+import multer from "multer";
+import s3 from "../configs/s3.ts";
 import { EsignService, FilePayload } from "../services/esignService.ts";
 const esignService = new EsignService();
-import multer from "multer";
-import multerS3 from "multer-s3";
-import s3 from "../configs/s3.ts";
 
-console.log(Deno.env.get("BUCKET_NAME"));
-
+// Configure Multer with memory storage to support both local storage and s3 bucket seperately
 const upload = multer({
-  storage: multerS3({
-    s3: s3,
-    bucket: Deno.env.get("BUCKET_NAME"),
-    metadata: (req: any, file: any, cb: any) => {
-      cb(null, { fieldName: file.fieldname });
-    },
-    key: (req: any, file: any, cb: any) => {
-      cb(null, `documents/${Date.now()}_${file.originalname}`);
-    },
-  }),
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
 }).single("file");
+
+function calculateFileHash(fileBuffer: Buffer): string {
+  const hash = createHash("sha256");
+  hash.update(fileBuffer);
+  return hash.digest("hex");
+}
 
 export const uploadFile = (req: any, res: any) => {
   upload(req, res, async (err: any) => {
-    if (err) return res.status(500).json({ error: err.message });
-
-    if (!req.file?.location) {
-      return res.status(400).json({ error: "File upload failed" });
+    if (err) {
+      return res.status(500).json({ error: err.message });
     }
+
+    if (!req.file) {
+      return res.status(400).json({ error: "No file provided" });
+    }
+    console.log(req.file);
 
     const { ownerId } = req.body;
     if (!ownerId) {
       return res.status(400).json({ error: "ownerId is required" });
     }
-    console.log(req.file);
 
-    const payload: FilePayload = {
-      ownerId,
-      fileName: req.file.originalname,
-      fileKey: req.file.location,
-      fileSize: req.file.size,
-      fileType: req.file.mimetype,
-    };
+    const file = req.file;
+    const fileBuffer = file.buffer;
+    const fileHash = calculateFileHash(fileBuffer);
+    const fileId = String(Date.now());
+    const fileKey = `documents/${fileId}_${file.originalname}`;
 
     try {
-      // create uploaded file entry in database
-      const fileCreated = await esignService.createFile(payload);
+      // Upload to S3
+      const putCommand = new PutObjectCommand({
+        Bucket: Deno.env.get("BUCKET_NAME"),
+        Key: fileKey,
+        Body: fileBuffer,
+        ContentType: file.mimetype,
+      });
+      await s3.send(putCommand);
+
+      // Prepare file payload for database
+      const payload: FilePayload = {
+        id: String(fileId),
+        ownerId,
+        fileName: file.originalname,
+        fileKey: `https://${Deno.env.get(
+          "BUCKET_NAME"
+        )}.s3.amazonaws.com/${fileKey}`,
+        fileSize: file.size,
+        fileType: file.mimetype,
+        fileHash,
+      };
+
+      // Save file metadata to database
+      await esignService.createFile(payload);
+
       return res.json({
         message: "File uploaded successfully",
-        fileUrl: req.file.location,
+        fileUrl: payload.fileKey,
+        fileHash,
       });
     } catch (error) {
-      console.error("Database save failed. Rolling back AWS upload...", error);
+      console.error("Upload or DB error:", error);
 
-      //if file create Failed in Database ( Rollback: Delete file from AWS)
-      await deleteFile({ params: { filename: req.file.key } }, res);
-      return res
-        .status(500)
-        .json({ error: "File upload failed due to database error" });
+      // Rollback S3 upload on failure
+      try {
+        await s3.send(
+          new DeleteObjectCommand({
+            Bucket: Deno.env.get("BUCKET_NAME"),
+            Key: fileKey,
+          })
+        );
+      } catch (rollbackError) {
+        console.error("Rollback failed:", rollbackError);
+      }
+
+      return res.status(500).json({ error: "File upload failed" });
     }
   });
 };
 
 export const getFile = async (req: any, res: any) => {
-  console.log("req params", req.params);
-  console.log("req body", req.body);
-
   try {
-    const params = {
+    const key = `documents/${req.params.filename}`;
+    const command = new GetObjectCommand({
       Bucket: Deno.env.get("BUCKET_NAME"),
-      Key: `documents/${req.params.filename}`,
-    };
+      Key: key,
+    });
 
-    const command = new GetObjectCommand(params);
     const { Body } = await s3.send(command);
-
     res.attachment(req.params.filename);
     Body.pipe(res);
   } catch (err: any) {
@@ -84,16 +113,80 @@ export const getFile = async (req: any, res: any) => {
 
 export const deleteFile = async (req: any, res: any) => {
   try {
-    const params = {
+    const key = `documents/${req.params.filename}`;
+    const command = new DeleteObjectCommand({
       Bucket: Deno.env.get("BUCKET_NAME"),
-      Key: `documents/${req.params.filename}`,
-    };
+      Key: key,
+    });
 
-    const command = new DeleteObjectCommand(params);
     await s3.send(command);
-
     res.json({ message: "File deleted successfully" });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
+};
+export const updateFile = (req: any, res: any) => {
+  upload(req, res, async (err: any) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: "No file provided" });
+    }
+
+    const { oldFileKey, ownerId } = req.body;
+    if (!oldFileKey || !ownerId) {
+      return res
+        .status(400)
+        .json({ error: "oldFileKey and ownerId are required" });
+    }
+
+    const file = req.file;
+    const fileBuffer = file.buffer;
+    try {
+      // Delete old file from S3
+      const oldKey = oldFileKey.includes("s3.amazonaws.com")
+        ? oldFileKey.split(".com/")[1]
+        : oldFileKey;
+
+      await s3.send(
+        new DeleteObjectCommand({
+          Bucket: Deno.env.get("BUCKET_NAME"),
+          Key: oldKey,
+        })
+      );
+
+      // Upload new file to S3
+      const putCommand = new PutObjectCommand({
+        Bucket: Deno.env.get("BUCKET_NAME"),
+        Key: oldFileKey,
+        Body: fileBuffer,
+        ContentType: file.mimetype,
+      });
+      await s3.send(putCommand);
+
+      // Prepare new payload
+      const payload: FilePayload = {
+        ownerId,
+        fileName: file.originalname,
+        fileKey: `https://${Deno.env.get(
+          "BUCKET_NAME"
+        )}.s3.amazonaws.com/${oldFileKey}`,
+        fileSize: file.size,
+        fileType: file.mimetype,
+      };
+
+      // Update in DB
+      await esignService.updateFile(oldFileKey, payload); // You must define this method in your service
+
+      return res.json({
+        message: "File updated successfully",
+        fileUrl: payload.fileKey,
+      });
+    } catch (error) {
+      console.error("Update error:", error);
+      return res.status(500).json({ error: "File update failed" });
+    }
+  });
 };
