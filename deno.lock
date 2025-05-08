@@ -2690,7 +2690,7 @@
         "npm:pdf-lib@^1.17.1",
         "npm:pusher@^5.2.0",
         "npm:svix@^1.61.4",
-        "npm:uuid@^11.1.0"
+        "npm:uuid@10"
       ]
     }
   }
