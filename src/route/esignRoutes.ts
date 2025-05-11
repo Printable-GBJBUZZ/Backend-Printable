@@ -6,6 +6,7 @@ import {
   getSignRecordWithStatus,
   updateFile,
   isSignerValid,
+  DeleteFile,
 } from "../controller/esignController.ts";
 const router = express.Router();
 //router to signRequest
@@ -15,6 +16,7 @@ router.get("/sign-document/:fileId/:userId", isSignerValid);
 router.post("/upload-document", uploadFile);
 router.get("/getRecords", getSignRecordWithStatus);
 router.post("/updateFile", updateFile);
+router.post("/deleteFile", DeleteFile);
 
 // router for submition of signature
 

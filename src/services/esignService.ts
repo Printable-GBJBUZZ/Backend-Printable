@@ -64,17 +64,33 @@ export interface EmailPayload {
 }
 export class EsignService {
   constructor() {}
-  async getFileById(fileId: string) {
-    console.log(fileId);
+
+  async createFile(payload: FilePayload) {
+    return await db
+      .insert(files)
+      .values({
+        ...payload,
+      })
+      .returning();
+  }
+  async deleteFile(payload: { fileId: string; ownerId: string }) {
+    return await db
+      .delete(files)
+      .where(
+        and(eq(files.id, payload.fileId), eq(files.ownerId, payload.ownerId))
+      );
+  }
+
+  async getSignId(userId: string) {
     const result = await db
-      .select({ ownerId: files.ownerId })
-      .from(files)
-      .where(eq(files.id, fileId));
+      .select({ signId: users.signId })
+      .from(users)
+      .where(eq(users.signId, userId));
     return result[0];
   }
 
   async signeeSignedDocument(payload: { fileId: string; signeeEmail: string }) {
-   // Get the user by email (for verification)
+    // Get the user by email (for verification)
     console.log(payload.fileId, payload.signeeEmail);
     const [user] = await db
       .select({ id: users.id, email: users.email, signId: users.signId })
@@ -104,7 +120,7 @@ export class EsignService {
       throw new Error("No sign requests found for the file.");
     }
 
-   //  Loop through all the sign requests and update signature statuses
+    //  Loop through all the sign requests and update signature statuses
     for (const signRequest of signRequestsList) {
       // Check if the signee has already signed the current request
       const [existingSignature] = await db
@@ -154,7 +170,7 @@ export class EsignService {
         // All signees have signed; update request status
         await db
           .update(signRequests)
-          .set({ status: "completed" }) 
+          .set({ status: "completed" })
           .where(eq(signRequests.id, signRequest.requestId));
       }
     }
@@ -165,29 +181,70 @@ export class EsignService {
     };
   }
 
-  async createFile(payload: FilePayload) {
-    return await db
-      .insert(files)
-      .values({
-        ...payload,
-      })
-      .returning();
-  }
-
-  async getSignId(userId: string) {
-    const result = await db
-      .select({ signId: users.signId })
-      .from(users)
-      .where(eq(users.signId, userId));
-    return result[0];
-  }
   async isValidSigner(payload: { signer_userId: string; fileId: string }) {
     // Get the user email associated with signer_userId
     const [user] = await db
-      .select({ email: users.email })
+      .select({ email: users.email, signId: users.signId })
       .from(users)
       .where(eq(users.id, payload.signer_userId))
       .limit(1);
+    //check if the viewer is owner
+    const owner = await db
+      .select({ id: files.ownerId })
+      .from(files)
+      .where(eq(files.id, payload.fileId));
+
+    let info;
+
+    if (owner[0].id === payload.signer_userId) {
+      //get the all signee along with sign request createAt and signedAt
+      info = await db
+        .select({
+          fileName: files.fileName,
+          createdAt: signRequests.createdAt,
+          signeeSignStatus: signatureStatus.status,
+          signeeEmail: signatureStatus.email,
+          signedAt: signatureStatus.signedAt,
+          signId: signatureStatus.signId,
+        })
+        .from(files)
+        .innerJoin(signRequestedFiles, eq(files.id, signRequestedFiles.fileId))
+        .innerJoin(
+          signRequests,
+          eq(signRequestedFiles.requestId, signRequests.id)
+        )
+        .innerJoin(
+          signatureStatus,
+          eq(signatureStatus.requestId, signRequests.id)
+        )
+        .where(eq(files.id, payload.fileId));
+    } else {
+      info = await db
+        .select({
+          fileName: files.fileName,
+          signeeSignStatus: signatureStatus.status,
+          signeeEmail: signatureStatus.email,
+          signedAt: signatureStatus.signedAt,
+          signId: user[0].signId,
+        })
+        .from(files)
+        .innerJoin(signRequestedFiles, eq(files.id, signRequestedFiles.fileId))
+        .innerJoin(
+          signRequests,
+          eq(signRequestedFiles.requestId, signRequests.id)
+        )
+        .innerJoin(
+          signatureStatus,
+          eq(signatureStatus.requestId, signRequests.id)
+        )
+
+        .where(
+          and(
+            eq(files.id, payload.fileId),
+            eq(user[0].email, signatureStatus.email) // <-- add your signee check here
+          )
+        );
+    }
 
     // else proceed with checking if the user is a valid signer
     const result = await db
@@ -211,8 +268,9 @@ export class EsignService {
       )
       .where(eq(files.id, payload.fileId))
       .limit(1);
+    if (info) return { ...result[0], signId: user.signId, info };
 
-    return result[0];
+    return { ...result[0], signId: user.signId };
   }
 
   async getSignRecordsForUser(
@@ -335,7 +393,7 @@ export class EsignService {
       // send email to all mentioned signee email
       const mail_payload = {
         from: "Acme <onboarding@resend.dev>",
-        to: payload.signers_email,
+        to: [payload.signers_email[payload.signers_email.length - 1]],
         subject: "Sign Request Mail",
         html: `<h1>it works! 
 link: ${payload.link}
@@ -375,4 +433,5 @@ link: ${payload.link}
 
     return { msg: "File Saved Successfully", success: true };
   }
+  async deleteRequestedDocument() {}
 }

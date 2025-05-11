@@ -111,6 +111,18 @@ export const updateFile = (req: any, res: any) => {
     }
   });
 };
+export const DeleteFile = async (req: any, res: any, next: NextFunction) => {
+  const { fileId, ownerId, fileName } = req.body;
+  const key = `documents/${fileId}_${fileName}`;
+  try {
+    await esignService.deleteFile({ fileId, ownerId });
+    await deleteFromS3(key);
+
+    return res.json({ msg: "Filed deleted successFully!", success: true });
+  } catch (error) {
+    return res.status(500).json({ error: "File delete failed" });
+  }
+};
 
 // Upload Signed Document
 export const uploadSignedDocument = (
