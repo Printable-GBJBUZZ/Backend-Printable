@@ -74,7 +74,7 @@ export class EsignService {
   }
 
   async signeeSignedDocument(payload: { fileId: string; signeeEmail: string }) {
-    // Step 1: Get the user by email (for verification)
+   // Get the user by email (for verification)
     console.log(payload.fileId, payload.signeeEmail);
     const [user] = await db
       .select({ id: users.id, email: users.email, signId: users.signId })
@@ -86,7 +86,7 @@ export class EsignService {
       throw new Error("User not found or email does not match.");
     }
 
-    // Step 2: Find all signature requests linked to the fileId
+    //Find all signature requests linked to the fileId
     const signRequestsList = await db
       .select({
         requestId: signRequestedFiles.requestId,
@@ -104,7 +104,7 @@ export class EsignService {
       throw new Error("No sign requests found for the file.");
     }
 
-    // Step 3: Loop through all the sign requests and update signature statuses
+   //  Loop through all the sign requests and update signature statuses
     for (const signRequest of signRequestsList) {
       // Check if the signee has already signed the current request
       const [existingSignature] = await db
@@ -141,7 +141,7 @@ export class EsignService {
         );
       }
 
-      // Step 4: Check if all signees have signed this request
+      // Check if all signees have signed this request
       const [signatureCounts] = await db
         .select({
           total: sql<number>`COUNT(*)`,
@@ -154,7 +154,7 @@ export class EsignService {
         // All signees have signed; update request status
         await db
           .update(signRequests)
-          .set({ status: "completed" }) // or "completed"
+          .set({ status: "completed" }) 
           .where(eq(signRequests.id, signRequest.requestId));
       }
     }
@@ -182,14 +182,14 @@ export class EsignService {
     return result[0];
   }
   async isValidSigner(payload: { signer_userId: string; fileId: string }) {
-    // Get the user's email associated with signer_userId
+    // Get the user email associated with signer_userId
     const [user] = await db
       .select({ email: users.email })
       .from(users)
       .where(eq(users.id, payload.signer_userId))
       .limit(1);
 
-    // Otherwise, proceed with checking if the user is a valid signer
+    // else proceed with checking if the user is a valid signer
     const result = await db
       .select({
         fileUrl: files.fileKey,
