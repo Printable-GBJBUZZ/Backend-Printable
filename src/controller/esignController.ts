@@ -134,14 +134,15 @@ export const uploadSignedDocument = (
     if (err) return res.status(500).json({ error: err.message });
     if (!req.file) return res.status(400).json({ error: "No file provided" });
 
-    const { fileId, fileName, ownerId, signeeEmail } = req.body;
-    if (!fileId || !ownerId || !signeeEmail) {
+    const { fileId, fileName, signeeId } = req.body;
+    if (!fileId || !signeeId) {
+      console.log("wrong something");
       return res.status(400).json({ error: "Missing required fields" });
     }
 
     try {
       //update sign status within database if valid
-      await esignService.signeeSignedDocument({ fileId, signeeEmail });
+      await esignService.signeeSignedDocument({ fileId, signeeId });
 
       const { buffer, mimetype, size } = req.file;
       const key = `documents/${fileId}_${fileName}`;

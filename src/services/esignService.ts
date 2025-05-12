@@ -89,24 +89,24 @@ export class EsignService {
     return result[0];
   }
 
-  async signeeSignedDocument(payload: { fileId: string; signeeEmail: string }) {
+  async signeeSignedDocument(payload: { fileId: string; signeeId: string }) {
     // Get the user by email (for verification)
-    console.log(payload.fileId, payload.signeeEmail);
+    console.log(payload.fileId, payload.signeeId);
     const [user] = await db
       .select({ id: users.id, email: users.email, signId: users.signId })
       .from(users)
-      .where(eq(users.email, payload.signeeEmail))
+      .where(eq(users.id, payload.signeeId))
       .limit(1);
 
     if (!user) {
-      throw new Error("User not found or email does not match.");
+      return {
+        msg: "Not a valid signee.",
+        success: false,
+      };
     }
-
-    //Find all signature requests linked to the fileId
-    const signRequestsList = await db
+    const signatureStatusIdsToUpdate = await db
       .select({
-        requestId: signRequestedFiles.requestId,
-        status: signRequests.status,
+        signatureStatusId: signatureStatus.id,
       })
       .from(files)
       .innerJoin(signRequestedFiles, eq(files.id, signRequestedFiles.fileId))
@@ -114,71 +114,57 @@ export class EsignService {
         signRequests,
         eq(signRequestedFiles.requestId, signRequests.id)
       )
-      .where(eq(files.id, payload.fileId));
-
-    if (signRequestsList.length === 0) {
-      throw new Error("No sign requests found for the file.");
-    }
-
-    //  Loop through all the sign requests and update signature statuses
-    for (const signRequest of signRequestsList) {
-      // Check if the signee has already signed the current request
-      const [existingSignature] = await db
-        .select({ status: signatureStatus.status })
-        .from(signatureStatus)
-        .where(
-          eq(signatureStatus.requestId, signRequest.requestId),
-          eq(signatureStatus.email, payload.signeeEmail)
-        )
-        .limit(1);
-
-      if (existingSignature && existingSignature.status === "signed") {
-        // Skip updating if the signee has already signed this request
-        return { msg: "You have already signed!" };
-      }
-
-      // Update the signature status for the current request
-      const updatedStatus = await db
+      .innerJoin(
+        signatureStatus,
+        eq(signatureStatus.requestId, signRequests.id)
+      )
+      .where(
+        and(eq(files.id, payload.fileId), eq(signatureStatus.email, user.email))
+      );
+    for (const signStatus of signatureStatusIdsToUpdate) {
+      await db
         .update(signatureStatus)
         .set({
-          signatureKey: calculateFileHash("i love sigining"),
+          signatureKey: calculateFileHash(
+            `signed through printable platform date:${new Date()} signId:${
+              user.signId
+            }`
+          ),
           signId: user.signId,
           status: "signed",
           signedAt: new Date(),
         })
-        .where(
-          eq(signatureStatus.requestId, signRequest.requestId),
-          eq(signatureStatus.email, payload.signeeEmail)
-        );
+        .where(eq(signatureStatus.id, signStatus.signatureStatusId));
+    }
 
-      if (updatedStatus.count === 0) {
-        throw new Error(
-          `Failed to update signature status for request ${signRequest.requestId}.`
-        );
-      }
-
-      // Check if all signees have signed this request
-      const [signatureCounts] = await db
-        .select({
-          total: sql<number>`COUNT(*)`,
-          signed: sql<number>`SUM(CASE WHEN ${signatureStatus.status} = 'signed' THEN 1 ELSE 0 END)`,
-        })
-        .from(signatureStatus)
-        .where(eq(signatureStatus.requestId, signRequest.requestId));
-
-      if (signatureCounts.total === signatureCounts.signed) {
-        // All signees have signed; update request status
-        await db
-          .update(signRequests)
-          .set({ status: "completed" })
-          .where(eq(signRequests.id, signRequest.requestId));
-      }
+    // check if request_id associated with fileId has all signed
+    //get request id based on fileId
+    const [{ requestId }] = await db
+      .select({ requestId: signRequestedFiles.requestId })
+      .from(signRequestedFiles)
+      .where(eq(signRequestedFiles.fileId, payload.fileId));
+    //check if all signee  had signed? and update requestId status if all signee signed that document
+    if (await this.areAllSigned(requestId)) {
+      await db
+        .update(signRequests)
+        .set({ status: "completed" })
+        .where(eq(signRequests.id, requestId));
     }
 
     return {
       message: "Document signed successfully!.",
       success: true,
     };
+  }
+  async areAllSigned(requestId: number): Promise<boolean> {
+    const result = await db
+      .select({
+        allSigned: sql<boolean>`bool_and(${signatureStatus.status} = 'signed')`,
+      })
+      .from(signatureStatus)
+      .where(eq(signatureStatus.requestId, requestId));
+
+    return result[0]?.allSigned ?? false;
   }
 
   async isValidSigner(payload: { signer_userId: string; fileId: string }) {
@@ -206,6 +192,7 @@ export class EsignService {
           signeeEmail: signatureStatus.email,
           signedAt: signatureStatus.signedAt,
           signId: signatureStatus.signId,
+          ownerId: files.ownerId,
         })
         .from(files)
         .innerJoin(signRequestedFiles, eq(files.id, signRequestedFiles.fileId))
@@ -246,7 +233,7 @@ export class EsignService {
         );
     }
 
-    // else proceed with checking if the user is a valid signer
+    // else proceed with checking if the user is a valid signerj
     const result = await db
       .select({
         fileUrl: files.fileKey,

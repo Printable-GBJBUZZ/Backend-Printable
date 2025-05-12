@@ -215,7 +215,7 @@ export const signatureStatus = pgTable("signature_status", {
 
   status: text("status").default("pending"), // "pending" | "signed"
 
-  signedAt: timestamp("signed_at").defaultNow().notNull(),
+  signedAt: timestamp("signed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
