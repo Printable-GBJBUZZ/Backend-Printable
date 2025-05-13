@@ -41,12 +41,13 @@ export const uploadFile = (req: any, res: any) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!req.file) return res.status(400).json({ error: "No file provided" });
 
-    const { ownerId } = req.body;
+    const { ownerId, fileId } = req.body;
+    console.log(fileId, ownerId);
     if (!ownerId) return res.status(400).json({ error: "ownerId is required" });
 
     const { buffer, originalname, mimetype, size } = req.file;
     const fileHash = calculateFileHash(buffer);
-    const fileId = String(Date.now());
+    // const fileId = String(Date.now());
     const key = `documents/${fileId}_${originalname}`;
 
     try {
@@ -67,7 +68,9 @@ export const uploadFile = (req: any, res: any) => {
 
       return res.json({ msg: "File uploaded", fileUrl });
     } catch (error) {
-      await deleteFromS3(key).catch(() => console.error("Rollback failed"));
+      await deleteFromS3(key)
+        .catch(() => console.error("Rollback failed"))
+        .finally(() => console.log("File upload is rolled back!"));
       return res.status(500).json({ error: "File upload failed" });
     }
   });
