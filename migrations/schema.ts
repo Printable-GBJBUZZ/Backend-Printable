@@ -66,7 +66,6 @@ export const folders = pgTable("folders", {
 	id: text().primaryKey().notNull(),
 	ownerId: text("owner_id").notNull(),
 	name: text().notNull(),
-	parentId: text("parent_id"),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
@@ -75,11 +74,6 @@ export const folders = pgTable("folders", {
 			columns: [table.ownerId],
 			foreignColumns: [users.id],
 			name: "folders_owner_id_users_id_fk"
-		}).onDelete("cascade"),
-	foreignKey({
-			columns: [table.parentId],
-			foreignColumns: [table.id],
-			name: "folders_parent_id_folders_id_fk"
 		}).onDelete("cascade"),
 ]);
 
@@ -120,6 +114,7 @@ export const users = pgTable("users", {
 }, (table) => [
 	unique("users_email_unique").on(table.email),
 	unique("users_phone_unique").on(table.phone),
+	unique("users_sign_id_unique").on(table.signId),
 ]);
 
 export const signatureStatus = pgTable("signature_status", {
@@ -127,7 +122,7 @@ export const signatureStatus = pgTable("signature_status", {
 	requestId: integer("request_id").notNull(),
 	email: text(),
 	signatureKey: text("signature_key"),
-	status: text().default('pending'),
+	status: text().default('pending').notNull(),
 	signedAt: timestamp("signed_at", { mode: 'string' }),
 	signId: text("sign_id"),
 	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),

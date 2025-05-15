@@ -44,14 +44,6 @@ export const foldersRelations = relations(folders, ({one, many}) => ({
 		fields: [folders.ownerId],
 		references: [users.id]
 	}),
-	folder: one(folders, {
-		fields: [folders.parentId],
-		references: [folders.id],
-		relationName: "folders_parentId_folders_id"
-	}),
-	folders: many(folders, {
-		relationName: "folders_parentId_folders_id"
-	}),
 	files: many(files),
 }));
 

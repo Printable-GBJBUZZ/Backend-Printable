@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1746710836570,
-      "tag": "0000_flat_korvac",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1746714911410,
-      "tag": "0001_supreme_zaladane",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1747038382936,
-      "tag": "0002_colossal_thunderbolts",
+      "when": 1747296906926,
+      "tag": "0000_wooden_forge",
       "breakpoints": true
     }
   ]

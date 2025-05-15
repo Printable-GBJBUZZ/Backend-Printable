@@ -108,7 +108,7 @@ export const updateFile = (req: any, res: any) => {
         fileId
       );
 
-      return res.json(response);
+      return res.status(200).json(response);
     } catch (error) {
       return res.status(500).json({ error: "File update failed" });
     }
