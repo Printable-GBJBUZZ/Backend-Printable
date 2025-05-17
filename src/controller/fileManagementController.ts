@@ -2,7 +2,10 @@ import { NextFunction, Request, Response } from "express";
 import { FileManager } from "../services/fileManagementService.ts";
 import { FolderPayload } from "../services/fileManagementService.ts";
 const fileManager = new FileManager();
-export const createFolder = async (req: Request, res: Response) => {
+export const createFolder = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
   try {
     const { folderName, ownerId } = req.body;
     console.log(folderName, ownerId);
@@ -27,7 +30,10 @@ export const renameFolder = async (
     return res.status(500).json({ error: "Failed creating new Folder!" });
   }
 };
-export const assignFolderToFile = async (req: Request, res: Response) => {
+export const assignFolderToFile = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
   try {
     const { fileId, folderId } = req.body;
     console.log(fileId, folderId);
