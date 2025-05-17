@@ -17,6 +17,7 @@ export const users = pgTable("users", {
   phone: text("phone").unique(),
   state: text("state"),
   city: text("city"),
+  signId: text("sign_id").notNull().unique(),
   address: text("address"),
   latitude: text("latitude"),
   longitude: text("longitude"),
@@ -56,51 +57,65 @@ export const orders = pgTable("orders", {
   documents: jsonb("documents").notNull(),
 });
 
-export const files = pgTable("files", {
+export const signRequests = pgTable("signature_requests", {
   id: serial("id").primaryKey(),
+  requestedBy: text("requested_by")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }), // Requested owner
+  status: text("status").default("pending").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export const files = pgTable("files", {
+  id: text("id").primaryKey(),
   ownerId: text("owner_id")
     .notNull()
     .references(() => users.id, {
       onDelete: "cascade",
     }),
   fileName: text("file_name").notNull(),
-  fileKey: text("file_key").notNull(),
+  fileKey: text("file_key").notNull(), // file access url
   fileSize: integer("file_size").notNull(),
   fileType: text("file_type").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  fileHash: text("file_hash").notNull(),
   folderId: text("folder_id").references(() => folders.id, {
     onDelete: "cascade",
   }),
-  expiresAt: timestamp("expiresAt"),
-});
-
-export const signRequests = pgTable("signature_requests", {
-  id: serial("id").primaryKey(),
-  requestedBy: text("requested_by")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  status: text("status").default("pending").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const folders = pgTable(
   "folders",
   {
+    // id TEXT PRIMARY KEY
     id: text("id").primaryKey(),
     ownerId: text("owner_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
-    parentId: text("parent_id").references(() => folders.id, {
-      onDelete: "cascade",
-    }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (table) => [
-    index("folders_owner_id_idx").on(table.ownerId),
-  ],
+    // CREATE INDEX ON folders(owner_id);
+    index("folders_owner_id_idx").on(table.ownerId), // :contentReference[oaicite:2]{index=2}
+  ]
 );
+export const filesRelations = relations(files, ({ one }) => ({
+  folder: one(folders, {
+    fields: [files.folderId],
+    references: [folders.id],
+  }),
+}));
+
+export const foldersRelations = relations(folders, ({ one, many }) => ({
+  owner: one(users, {
+    fields: [folders.ownerId],
+    references: [users.id],
+  }),
+  files: many(files),
+}));
 
 export const signRequestedFiles = pgTable("sign_requested_files", {
   id: serial("id").primaryKey(),
@@ -118,22 +133,34 @@ export const signRequestedFiles = pgTable("sign_requested_files", {
 
 export const signatureStatus = pgTable("signature_status", {
   id: serial("id").primaryKey(),
+
   requestId: integer("request_id")
     .notNull()
+
     .references(() => signRequests.id, {
       onDelete: "cascade",
     }),
-  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
-  email: text("email"),
-  signatureKey: text("signature_key"),
-  status: text("status").default("pending"),
+
+  signId: text("sign_id"), // Nullable for unregistered users
+
+  email: text("email"), // Store email for unregistered users
+
+  signatureKey: text("signature_key"), // Stores digital signature key (if signed)
+
+  status: text("status").default("pending").notNull(), // "pending" | "signed"
+
   signedAt: timestamp("signed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const reviews = pgTable("reviews", {
   id: serial("id").primaryKey(),
-  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  merchantId: text("merchant_id").notNull().references(() => merchants.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  merchantId: text("merchant_id")
+    .notNull()
+    .references(() => merchants.id, { onDelete: "cascade" }),
   rating: integer("rating").notNull(),
   comment: text("comment"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -151,29 +178,6 @@ export const ordersRelations = relations(orders, ({ one }) => ({
     fields: [orders.merchantId],
     references: [merchants.id],
   }),
-}));
-
-export const filesRelations = relations(files, ({ one }) => ({
-  folder: one(folders, {
-    fields: [files.folderId],
-    references: [folders.id],
-  }),
-}));
-
-export const foldersRelations = relations(folders, ({ many }) => ({
-  files: many(files),
-}));
-
-export const folderRelations = relations(folders, ({ one, many }) => ({
-  owner: one(users, {
-    fields: [folders.ownerId],
-    references: [users.id],
-  }),
-  parent: one(folders, {
-    fields: [folders.parentId],
-    references: [folders.id],
-  }),
-  subfolders: many(folders),
 }));
 
 export const userFileRelations = relations(users, ({ many }) => ({
@@ -196,7 +200,7 @@ export const signRequestWithsignaturesRelations = relations(
   signRequests,
   ({ many }) => ({
     signatures: many(signatureStatus),
-  }),
+  })
 );
 
 export const reviewsRelations = relations(reviews, ({ one }) => ({
