@@ -23,43 +23,14 @@ const upload = multer({
 }).single("file");
 
 export const uploadFile = (req: any, res: any) => {
-  upload(req, res, async (err: any) => {
+  upload(req, res, (err: any) => {
     if (err) return res.status(500).json({ error: err.message });
-
-    if (!req.file?.location) {
-      return res.status(400).json({ error: "File upload failed" });
-    }
-
-    const { ownerId } = req.body;
-    if (!ownerId) {
-      return res.status(400).json({ error: "ownerId is required" });
-    }
+    res.json({
+      message: "File uploaded successfully",
+      fileUrl: req.file.location,
+      fileId: req.file.key,
+    });
     console.log(req.file);
-
-    const payload: FilePayload = {
-      ownerId,
-      fileName: req.file.originalname,
-      fileKey: req.file.location,
-      fileSize: req.file.size,
-      fileType: req.file.mimetype,
-    };
-
-    try {
-      // create uploaded file entry in database
-      const fileCreated = await esignService.createFile(payload);
-      return res.json({
-        message: "File uploaded successfully",
-        fileUrl: req.file.location,
-      });
-    } catch (error) {
-      console.error("Database save failed. Rolling back AWS upload...", error);
-
-      //if file create Failed in Database ( Rollback: Delete file from AWS)
-      await deleteFile({ params: { filename: req.file.key } }, res);
-      return res
-        .status(500)
-        .json({ error: "File upload failed due to database error" });
-    }
   });
 };
 
@@ -99,24 +70,29 @@ export const deleteFile = async (req: any, res: any) => {
   }
 };
 
-
-
 // list file
 export const listFiles = async (req: any, res: any) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const pageSize = parseInt(req.query.limit) || 10;
-    const folderName = req.query.folderName || ""
-    const sortBy = req.query.sort || "id"
-    const type = req.query.typeFilter || ""
+    const folderName = req.query.folderName || "";
+    const sortBy = req.query.sort || "id";
+    const type = req.query.typeFilter || "";
     const ownerId = req.query.ownerId || "";
 
     const filesService = new FilesService();
-    
-    const result = await filesService.getFiles(page, pageSize, folderName, {
-      column: sortBy,
-      direction: "asc"
-    }, type , ownerId);
+
+    const result = await filesService.getFiles(
+      page,
+      pageSize,
+      folderName,
+      {
+        column: sortBy,
+        direction: "asc",
+      },
+      type,
+      ownerId
+    );
 
     res.json(result);
   } catch (err: any) {
