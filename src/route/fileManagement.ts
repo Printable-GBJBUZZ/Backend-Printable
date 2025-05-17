@@ -13,10 +13,10 @@ const router = express.Router();
 router.post("/uploadFile", uploadFile);
 // router when user clicks on the sign link
 router.post("/deleteFile", DeleteFile);
-router.post("/getFiles", getAllFiles); // can change file folder name
-router.post("/renameFolder", renameFolder);
-router.post("/deleteFolder", deleteFolder);
+router.get("/getFiles/:ownerId", getAllFiles); // can change file folder name
+router.patch("/renameFolder/:folderId/:newName", renameFolder);
+router.delete("/deleteFolder/:folderId", deleteFolder);
 router.post("/createFolder", createFolder);
-router.post("/moveFileToFolder", assignFolderToFile);
+router.patch("/moveFileToFolder", assignFolderToFile);
 
 export default router;

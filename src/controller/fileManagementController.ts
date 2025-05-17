@@ -19,7 +19,7 @@ export const renameFolder = async (
   res: Response
 ): Promise<any> => {
   try {
-    const { folderId, newName } = req.body;
+    const { folderId, newName } = req.params;
     const result = await fileManager.renameFolder({ folderId, newName });
     return res.status(200).json({ msg: "folder renamed successfully!!" });
   } catch (error) {
@@ -39,9 +39,15 @@ export const assignFolderToFile = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Failed file move!" });
   }
 };
-export const deleteFolder = async (req: Request, res: Response) => {
+export const deleteFolder = async (
+  req: Request,
+  res: Response
+): Promise<any> => {
   try {
-    const { folderId } = req.body;
+    const { folderId } = req.params;
+    console.log(folderId);
+    if (!folderId)
+      return res.status(400).json({ msg: "folderId is missing !" });
     const result = await fileManager.deleteFolder({ folderId });
     console.log(result);
     return res.status(200).json({ msg: "folder deleted successfully!!" });
@@ -56,7 +62,7 @@ export const getAllFiles = async (
   res: Response
 ): Promise<any> => {
   try {
-    const { ownerId } = req.body;
+    const { ownerId } = req.params;
     console.log(ownerId);
     const result = await fileManager.getFiles({ ownerId });
     console.log(result);
