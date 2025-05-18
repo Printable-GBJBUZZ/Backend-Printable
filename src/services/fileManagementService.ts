@@ -59,12 +59,7 @@ export class FileManager {
       .from(folders)
       .leftJoin(files, eq(files.folderId, folders.id))
 
-      .where(
-        and(
-          eq(folders.ownerId, payload.ownerId),
-          eq(files.ownerId, payload.ownerId)
-        )
-      );
+      .where(eq(folders.ownerId, payload.ownerId));
     const filesWithOutFolder = await db
       .select({
         fileId: files.id,
