@@ -1,4 +1,4 @@
-import { eq, ne } from "drizzle-orm";
+import { eq, ne, and, isNull } from "drizzle-orm";
 import { db } from "../configs/db.ts";
 import { files, folders } from "../db/schema.ts";
 export interface FolderPayload {
@@ -69,7 +69,7 @@ export class FileManager {
         fileSize: files.fileSize,
       })
       .from(files)
-      .where(eq(files.ownerId, payload.ownerId));
+      .where(and(eq(files.ownerId, payload.ownerId), isNull(files.folderId)));
     console.log(filesWithOutFolder);
     // const folders = await db.select({ folderName: folders.name }).from(folders);
     const folderMap = new Map<string | null, FolderGroup>();
