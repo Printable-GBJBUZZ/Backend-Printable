@@ -8,9 +8,9 @@ import { eq } from "drizzle-orm";
 export class WebhookService {
   public async handleWebhook(
     req: Request<{}, {}, UserPayloadType>,
-    res: Response
+    res: Response,
   ): Promise<Response> {
-    const payload = req.body; 
+    const payload = req.body;
     console.log(payload);
 
     switch (payload.type) {
@@ -20,6 +20,7 @@ export class WebhookService {
           const response = await db.insert(users).values({
             id: userData.id,
             name: `${userData.first_name} ${userData.last_name}`,
+            signId: userData.id,
             email: userData.email_addresses[0]?.email_address || "",
             phone: userData.phone_numbers[0],
           });
@@ -56,9 +57,9 @@ export class WebhookService {
             .set({
               id: userData.id,
               name: `${userData.first_name} ${userData.last_name}`,
-              email: userData.email_addresses[0]?.email_address || "", 
+              email: userData.email_addresses[0]?.email_address || "",
               phone: userData.phone_numbers[0],
-              updatedAt:new Date()
+              updatedAt: new Date(),
             })
             .where(eq(users.id, payload.data.id));
 

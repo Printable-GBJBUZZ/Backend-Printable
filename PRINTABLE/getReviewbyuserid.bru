@@ -1,0 +1,15 @@
+meta {
+  name: getReviewbyuserid
+  type: http
+  seq: 22
+}
+
+get {
+  url: http://localhost:5000/api/reviews/user?userId=user_123
+  body: none
+  auth: inherit
+}
+
+params:query {
+  userId: user_123
+}
