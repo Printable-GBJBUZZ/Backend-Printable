@@ -1,0 +1,19 @@
+meta {
+  name: Create Merchant Service
+  type: http
+  seq: 29
+}
+
+post {
+  url: http://localhost:5000/api/service/merchant
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "id": "ms_1",
+    "merchantId": "merchant_456",
+    "serviceId": "svc_1"
+  }
+}

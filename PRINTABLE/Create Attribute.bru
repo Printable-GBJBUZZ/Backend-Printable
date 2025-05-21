@@ -1,0 +1,18 @@
+meta {
+  name: Create Attribute
+  type: http
+  seq: 27
+}
+
+post {
+  url: http://localhost:5000/api/service/attribute
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "id": "attr_2",
+    "name": "Paper Sizes"
+  }
+}
