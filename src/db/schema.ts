@@ -6,6 +6,8 @@ import {
   timestamp,
   integer,
   jsonb,
+  numeric,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { relations } from "drizzle-orm";
@@ -61,11 +63,12 @@ export const signRequests = pgTable("signature_requests", {
   id: serial("id").primaryKey(),
   requestedBy: text("requested_by")
     .notNull()
-    .references(() => users.id, { onDelete: "cascade" }), // Requested owner
+    .references(() => users.id, { onDelete: "cascade" }),
   status: text("status").default("pending").notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
 export const files = pgTable("files", {
   id: text("id").primaryKey(),
   ownerId: text("owner_id")
@@ -74,7 +77,7 @@ export const files = pgTable("files", {
       onDelete: "cascade",
     }),
   fileName: text("file_name").notNull(),
-  fileKey: text("file_key").notNull(), // file access url
+  fileKey: text("file_key").notNull(),
   fileSize: integer("file_size").notNull(),
   fileType: text("file_type").notNull(),
   fileHash: text("file_hash").notNull(),
@@ -88,7 +91,6 @@ export const files = pgTable("files", {
 export const folders = pgTable(
   "folders",
   {
-    // id TEXT PRIMARY KEY
     id: text("id").primaryKey(),
     ownerId: text("owner_id")
       .notNull()
@@ -98,57 +100,29 @@ export const folders = pgTable(
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (table) => [
-    // CREATE INDEX ON folders(owner_id);
-    index("folders_owner_id_idx").on(table.ownerId), // :contentReference[oaicite:2]{index=2}
+    index("folders_owner_id_idx").on(table.ownerId),
   ]
 );
-export const filesRelations = relations(files, ({ one }) => ({
-  folder: one(folders, {
-    fields: [files.folderId],
-    references: [folders.id],
-  }),
-}));
-
-export const foldersRelations = relations(folders, ({ one, many }) => ({
-  owner: one(users, {
-    fields: [folders.ownerId],
-    references: [users.id],
-  }),
-  files: many(files),
-}));
 
 export const signRequestedFiles = pgTable("sign_requested_files", {
   id: serial("id").primaryKey(),
-  fileId: integer("file_id")
+  fileId: text("file_id")
     .notNull()
-    .references(() => files.id, {
-      onDelete: "cascade",
-    }),
+    .references(() => files.id, { onDelete: "cascade" }),
   requestId: integer("request_id")
     .notNull()
-    .references(() => signRequests.id, {
-      onDelete: "cascade",
-    }),
+    .references(() => signRequests.id, { onDelete: "cascade" }),
 });
 
 export const signatureStatus = pgTable("signature_status", {
   id: serial("id").primaryKey(),
-
   requestId: integer("request_id")
     .notNull()
-
-    .references(() => signRequests.id, {
-      onDelete: "cascade",
-    }),
-
-  signId: text("sign_id"), // Nullable for unregistered users
-
-  email: text("email"), // Store email for unregistered users
-
-  signatureKey: text("signature_key"), // Stores digital signature key (if signed)
-
-  status: text("status").default("pending").notNull(), // "pending" | "signed"
-
+    .references(() => signRequests.id, { onDelete: "cascade" }),
+  signId: text("sign_id"),
+  email: text("email"),
+  signatureKey: text("signature_key"),
+  status: text("status").default("pending").notNull(),
   signedAt: timestamp("signed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -167,10 +141,64 @@ export const reviews = pgTable("reviews", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const services = pgTable("services", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const merchant_services = pgTable("merchant_services", {
+  id: text("id").primaryKey(),
+  merchantId: text("merchant_id").notNull().references(() => merchants.id, { onDelete: "cascade" }),
+  serviceId: text("service_id").notNull().references(() => services.id, { onDelete: "cascade" }),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const attributes = pgTable("attributes", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+});
+
+export const attribute_values = pgTable("attribute_values", {
+  id: text("id").primaryKey(),
+  attributeId: text("attribute_id").notNull().references(() => attributes.id, { onDelete: "cascade" }),
+  value: text("value").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const pricing_rules = pgTable("pricing_rules", {
+  id: text("id").primaryKey(),
+  merchantServiceId: text("merchant_service_id").notNull().references(() => merchant_services.id, { onDelete: "cascade" }),
+  price: numeric("price", { precision: 10, scale: 2 }).notNull(),
+  attributes: jsonb("attributes").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // RELATIONS
+export const filesRelations = relations(files, ({ one }) => ({
+  folder: one(folders, {
+    fields: [files.folderId],
+    references: [folders.id],
+  }),
+}));
+
+export const foldersRelations = relations(folders, ({ one, many }) => ({
+  owner: one(users, {
+    fields: [folders.ownerId],
+    references: [users.id],
+  }),
+  files: many(files),
+}));
+
 export const merchantsRelations = relations(merchants, ({ many }) => ({
   orders: many(orders),
   reviews: many(reviews),
+  merchantServices: many(merchant_services),
 }));
 
 export const ordersRelations = relations(orders, ({ one }) => ({
@@ -211,5 +239,39 @@ export const reviewsRelations = relations(reviews, ({ one }) => ({
   merchant: one(merchants, {
     fields: [reviews.merchantId],
     references: [merchants.id],
+  }),
+}));
+
+export const servicesRelations = relations(services, ({ many }) => ({
+  merchantServices: many(merchant_services),
+}));
+
+export const merchantServicesRelations = relations(merchant_services, ({ one, many }) => ({
+  merchant: one(merchants, {
+    fields: [merchant_services.merchantId],
+    references: [merchants.id],
+  }),
+  service: one(services, {
+    fields: [merchant_services.serviceId],
+    references: [services.id],
+  }),
+  pricingRules: many(pricing_rules),
+}));
+
+export const attributesRelations = relations(attributes, ({ many }) => ({
+  attributeValues: many(attribute_values),
+}));
+
+export const attributeValuesRelations = relations(attribute_values, ({ one }) => ({
+  attribute: one(attributes, {
+    fields: [attribute_values.attributeId],
+    references: [attributes.id],
+  }),
+}));
+
+export const pricingRulesRelations = relations(pricing_rules, ({ one }) => ({
+  merchantService: one(merchant_services, {
+    fields: [pricing_rules.merchantServiceId],
+    references: [merchant_services.id],
   }),
 }));
