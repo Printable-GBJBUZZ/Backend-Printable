@@ -6,6 +6,8 @@ import {
   timestamp,
   integer,
   jsonb,
+  boolean,
+  numeric
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { relations } from "drizzle-orm";
@@ -163,6 +165,44 @@ export const reviews = pgTable("reviews", {
     .references(() => merchants.id, { onDelete: "cascade" }),
   rating: integer("rating").notNull(),
   comment: text("comment"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const services = pgTable("services", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const merchant_services = pgTable("merchant_services", {
+  id: text("id").primaryKey(),
+  merchantId: text("merchant_id").notNull().references(() => merchants.id, { onDelete: "cascade" }),
+  serviceId: text("service_id").notNull().references(() => services.id, { onDelete: "cascade" }),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const attributes = pgTable("attributes", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+});
+
+export const attribute_values = pgTable("attribute_values", {
+  id: text("id").primaryKey(),
+  attributeId: text("attribute_id").notNull().references(() => attributes.id, { onDelete: "cascade" }),
+  value: text("value").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const pricing_rules = pgTable("pricing_rules", {
+  id: text("id").primaryKey(),
+  merchantServiceId: text("merchant_service_id").notNull().references(() => merchant_services.id, { onDelete: "cascade" }),
+  price: numeric("price", { precision: 10, scale: 2 }).notNull(),
+  attributes: jsonb("attributes").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

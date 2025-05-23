@@ -6,6 +6,8 @@ import orderRouter from "./orderRoute.ts";
 import merchantRouter from "./merchantRoutes.ts";
 import esignRouter from "./esignRoutes.ts";
 import reviewRouter from "./reviewRoutes.ts";
+import servicesandPriceRouter from './ServicesandPriceRoutes.ts';
+import orderPriceRouter from './OrderPriceRoutes.ts';
 import fetchReviewRoutes from "./fetchReviewRoutes.ts";
 import fileManagement from "./fileManagement.ts";
 
@@ -28,6 +30,8 @@ router.use("/merchant", merchantRouter);
 router.use("/esign", esignRouter);
 router.use("/review", reviewRouter);
 router.use("/reviews", fetchReviewRoutes);
+router.use('/service', servicesandPriceRouter);
+router.use('/order', orderPriceRouter);
 router.use("/fileManagement", fileManagement);
 
 router.post("/pdf/merge", upload.array("file"), mergePDFs);
