@@ -66,6 +66,8 @@ export class UserService {
         distance: distanceExpression,
         lat: users.latitude,
         long: users.longitude,
+        average_rating: merchants.average_rating,
+        rating_count: merchants.rating_count,
       })
       .from(merchants)
       .innerJoin(users, sql`${merchants.userId} = ${users.id}`)
