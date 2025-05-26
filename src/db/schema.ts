@@ -30,6 +30,15 @@ export const users = pgTable("users", {
 export const merchants = pgTable("merchants", {
   id: text("id").primaryKey(),
   userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+
+  email: text("email").unique().notNull(),
+  phone: text("phone").unique(),
+  state: text("state"),
+  city: text("city"),
+
+  address: text("address"),
+  latitude: text("latitude"),
+  longitude: text("longitude"),
   shopName: text("shop_name").notNull(),
   shopImages: text("images")
     .array()

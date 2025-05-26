@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import {
   MerchantService,
-  MerchantCreatePayload,
-  MerchantUpdatePayload,
+  MerchantPayload,
 } from "../services/merchantService.ts";
 
 const merchantService = new MerchantService();
@@ -43,12 +42,13 @@ export const getMerchantReviews = async (
   }
 };
 export const createMerchant = async (
-  req: Request<{}, {}, MerchantCreatePayload>,
+  req: Request<{}, {}, MerchantPayload>,
   res: Response,
   next: NextFunction,
 ) => {
   try {
     const payload = req.body;
+    console.log("merchant payload.....", payload);
     const newMerchant = await merchantService.createMerchant(payload);
     res.status(201).json({
       message: "Merchant created successfully",
@@ -60,7 +60,7 @@ export const createMerchant = async (
 };
 
 export const updateMerchant = async (
-  req: Request<{ id: string }, {}, MerchantUpdatePayload>,
+  req: Request<{ id: string }, {}, MerchantPayload>,
   res: Response,
   next: NextFunction,
 ) => {

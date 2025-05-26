@@ -2,17 +2,18 @@ import { merchants, orders } from "../db/schema.ts";
 import { db } from "../configs/db.ts";
 import { eq } from "drizzle-orm";
 
-export interface MerchantCreatePayload {
+export interface MerchantPayload {
+  id: string;
   userId: string;
+  email: string;
+  phone: string | null;
+  state: string | null;
+  city: string | null;
+  address: string | null;
+  latitude: string | null;
+  longitude: string | null;
   shopName: string;
-  address: string;
-  contact: string;
-}
-
-export interface MerchantUpdatePayload {
-  shopName?: string;
-  address?: string;
-  contact?: string;
+  shopImages: string[];
 }
 
 export class MerchantService {
@@ -35,12 +36,10 @@ export class MerchantService {
       .limit(1);
     return merchantReviews;
   }
-  public async createMerchant(payload: MerchantCreatePayload) {
-    const id = crypto.randomUUID();
+  public async createMerchant(payload: MerchantPayload) {
     const result = await db
       .insert(merchants)
       .values({
-        id,
         ...payload,
       })
       .returning();
@@ -59,10 +58,7 @@ export class MerchantService {
     return merchantWithOrders;
   }
 
-  public async updateMerchant(
-    merchantId: string,
-    payload: MerchantUpdatePayload,
-  ) {
+  public async updateMerchant(merchantId: string, payload: MerchantPayload) {
     const result = await db
       .update(merchants)
       .set(payload)
