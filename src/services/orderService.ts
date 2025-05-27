@@ -1,7 +1,7 @@
 import Pusher from "pusher";
-import { orders } from "../db/schema.ts";
+import { orders, merchants } from "../db/schema.ts";
 import { db } from "../configs/db.ts";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 export interface OrderCreatePayload {
   userId: string;
@@ -9,7 +9,7 @@ export interface OrderCreatePayload {
   totalAmount: number;
   paymentMethod: string;
   documents: any;
-  scheduledPrintTime?: Date;
+  scheduledPrintTime?: string | Date; // Accept string or Date
   fulfillmentType?: string; // "delivery" or "takeaway", default "delivery"
   state?: string;
   city?: string;
@@ -19,10 +19,10 @@ export interface OrderCreatePayload {
 }
 
 export interface OrderUpdatePayload {
-  status?: string;
+  status?: "pending" | "printing" | "ready for pickup" | "completed";
   totalAmount?: number;
   paymentMethod?: string;
-  scheduledPrintTime?: Date;
+  scheduledPrintTime?: string | Date; // Accept string or Date
   fulfillmentType?: string;
   state?: string;
   city?: string;
@@ -72,11 +72,32 @@ export class OrderService {
 
   public async createOrder(payload: OrderCreatePayload) {
     const id = crypto.randomUUID();
+    // Convert scheduledPrintTime to a Date if it's a string
+    const scheduledPrintTime = payload.scheduledPrintTime
+      ? typeof payload.scheduledPrintTime === "string"
+        ? new Date(payload.scheduledPrintTime)
+        : payload.scheduledPrintTime
+      : undefined;
+
     const result = await db
       .insert(orders)
-      .values({ id, ...payload })
+      .values({
+        id,
+        ...payload,
+        scheduledPrintTime, // Use the converted Date
+      })
       .returning();
     const order = result[0];
+
+    // Update merchant metrics: increment totalOrders and pendingOrders
+    await db
+      .update(merchants)
+      .set({
+        totalOrders: sql`${merchants.totalOrders} + 1`,
+        pendingOrders: sql`${merchants.pendingOrders} + 1`,
+        updatedAt: new Date(),
+      })
+      .where(eq(merchants.id, payload.merchantId));
 
     // Trigger a realtime event to notify the merchant
     await this.pusher.trigger(
@@ -87,7 +108,7 @@ export class OrderService {
         userId: payload.userId,
         totalAmount: payload.totalAmount,
         documents: payload.documents,
-        scheduledPrintTime: payload.scheduledPrintTime,
+        scheduledPrintTime: order.scheduledPrintTime,
       }
     );
 
@@ -95,16 +116,43 @@ export class OrderService {
   }
 
   public async updateOrder(orderId: string, payload: OrderUpdatePayload) {
+    // Convert scheduledPrintTime to a Date if it's a string
+    const scheduledPrintTime = payload.scheduledPrintTime
+      ? typeof payload.scheduledPrintTime === "string"
+        ? new Date(payload.scheduledPrintTime)
+        : payload.scheduledPrintTime
+      : undefined;
+
     const result = await db
       .update(orders)
-      .set({ ...payload, updatedAt: new Date() })
+      .set({
+        ...payload,
+        scheduledPrintTime, // Use the converted Date
+        updatedAt: new Date(),
+      })
       .where(eq(orders.id, orderId))
       .returning();
     const order = result[0];
 
+    // If status changes to completed, update merchant metrics
+    if (payload.status === "completed") {
+      await db
+        .update(merchants)
+        .set({
+          acceptedOrders: sql`${merchants.acceptedOrders} + 1`,
+          pendingOrders: sql`${merchants.pendingOrders} - 1`,
+          totalRevenue: sql`CAST(${merchants.totalRevenue} AS NUMERIC) + ${order.totalAmount}`,
+          updatedAt: new Date(),
+        })
+        .where(eq(merchants.id, order.merchantId));
+    }
+
     if (
       payload.status &&
-      (payload.status === "accepted" || payload.status === "declined" || payload.status === "completed" || payload.status === "cancelled")
+      (payload.status === "accepted" ||
+       payload.status === "declined" ||
+       payload.status === "completed" ||
+       payload.status === "cancelled")
     ) {
       await this.pusher.trigger(
         `private-user-${order.userId}`,

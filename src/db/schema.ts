@@ -30,12 +30,10 @@ export const users = pgTable("users", {
 export const merchants = pgTable("merchants", {
   id: text("id").primaryKey(),
   userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
-
   email: text("email").unique().notNull(),
   phone: text("phone").unique(),
   state: text("state"),
   city: text("city"),
-
   address: text("address"),
   latitude: text("latitude"),
   longitude: text("longitude"),
@@ -44,9 +42,13 @@ export const merchants = pgTable("merchants", {
     .array()
     .default(sql`ARRAY[]::text[]`),
   average_rating: numeric("average_rating", { precision: 10, scale: 2 })
-    .default(0)
+    .default("0")
     .notNull(),
   rating_count: integer("rating_count").default(0).notNull(),
+  totalOrders: integer("total_orders").default(0).notNull(),
+  totalRevenue: numeric("total_revenue", { precision: 10, scale: 2 }).default("0.00").notNull(),
+  pendingOrders: integer("pending_orders").default(0).notNull(),
+  acceptedOrders: integer("accepted_orders").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at"),
 });
@@ -57,7 +59,7 @@ export const orders = pgTable("orders", {
   merchantId: text("merchant_id").references(() => merchants.id, {
     onDelete: "cascade",
   }),
-  status: text("status").default("pending").notNull(),
+  status: text("status", { enum: ["pending", "printing", "ready for pickup", "completed"] }).default("pending").notNull(),
   totalAmount: integer("total_amount").notNull(),
   paymentMethod: text("payment_method").notNull(),
   scheduledPrintTime: timestamp("scheduled_print_time"),
