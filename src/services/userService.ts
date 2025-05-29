@@ -3,6 +3,7 @@ import { db } from "../configs/db.ts";
 import { eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { getDistanceMatrix } from "./distanceMatrixService.ts";
+
 export interface UserUpdatePayload {
   id: string;
   name: string;
@@ -63,6 +64,10 @@ export class UserService {
         merchantId: merchants.id,
         shopName: merchants.shopName,
         MerchantImages: merchants.shopImages,
+        totalOrders: merchants.totalOrders,
+        totalRevenue: merchants.totalRevenue,
+        pendingOrders: merchants.pendingOrders,
+        acceptedOrders: merchants.acceptedOrders,
         distance: distanceExpression,
         lat: users.latitude,
         long: users.longitude,
@@ -73,6 +78,7 @@ export class UserService {
       .innerJoin(users, sql`${merchants.userId} = ${users.id}`)
       .orderBy(distanceExpression)
       .limit(10);
+
     const nearestMerchants = await nearestMerchantsQuery.execute();
     const distanceMatrix = await getDistanceMatrix(
       [Number(lat), Number(long)],

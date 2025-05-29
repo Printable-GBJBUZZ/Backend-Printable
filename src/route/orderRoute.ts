@@ -2,9 +2,9 @@ import express from "express";
 import {
   getOrder,
   getOrdersByMerchant,
+  getOrdersByUserId,
   createOrder,
   updateOrder,
-  getOrdersByUserId,
 } from "../controller/orderController.ts";
 
 const router = express.Router();
