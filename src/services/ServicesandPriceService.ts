@@ -22,6 +22,11 @@ export interface CreatePricingRuleInput {
   attributes: Record<string, string>;
 }
 
+export interface UpdatePricingRuleInput {
+  price?: number;
+  attributes?: Record<string, string>;
+}
+
 export interface CreateAttributeInput {
   id: string;
   name: string;
@@ -99,6 +104,19 @@ export class ServicesandPriceService {
       attributes: payload.attributes,
     }).returning();
     return newPricingRule;
+  }
+
+  public async updatePricingRule(id: string, payload: UpdatePricingRuleInput) {
+    const [updatedPricingRule] = await db
+      .update(pricing_rules)
+      .set({
+        price: payload.price,
+        attributes: payload.attributes,
+        updatedAt: new Date(),
+      })
+      .where(eq(pricing_rules.id, id))
+      .returning();
+    return updatedPricingRule || null;
   }
 
   public async getPricingRules(merchantServiceId: string) {

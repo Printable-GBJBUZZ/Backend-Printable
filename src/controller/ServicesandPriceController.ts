@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { ServicesandPriceService, CreateServiceInput, CreateMerchantServiceInput, CreatePricingRuleInput, CreateAttributeInput, CreateAttributeValueInput } from '../services/ServicesandPriceService.ts';
+import { ServicesandPriceService, CreateServiceInput, CreateMerchantServiceInput, CreatePricingRuleInput, UpdatePricingRuleInput, CreateAttributeInput, CreateAttributeValueInput } from '../services/ServicesandPriceService.ts';
 
 const servicesandPriceService = new ServicesandPriceService();
 
@@ -96,6 +96,27 @@ export const createPricingRule = async (
     }
     const pricingRule = await servicesandPriceService.createPricingRule(payload);
     return res.status(201).json({ status: 'success', data: pricingRule });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updatePricingRule = async (
+  req: Request<{ id: string }, {}, UpdatePricingRuleInput>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const id = req.params.id;
+    const payload = req.body;
+    if (!payload.price && !payload.attributes) {
+      return res.status(400).json({ status: 'error', statusCode: 400, message: 'At least one of price or attributes is required to update' });
+    }
+    const updatedPricingRule = await servicesandPriceService.updatePricingRule(id, payload);
+    if (!updatedPricingRule) {
+      return res.status(404).json({ status: 'error', statusCode: 404, message: 'Pricing rule not found' });
+    }
+    return res.status(200).json({ status: 'success', data: updatedPricingRule });
   } catch (error) {
     next(error);
   }

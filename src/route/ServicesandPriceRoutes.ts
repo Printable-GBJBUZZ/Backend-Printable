@@ -6,6 +6,7 @@ import {
   createMerchantService,
   getMerchantServices,
   createPricingRule,
+  updatePricingRule,
   getPricingRules,
   createAttribute,
   createAttributeValue,
@@ -21,6 +22,7 @@ router.post('/merchant', createMerchantService);
 router.get('/merchant/services', getMerchantServices);
 
 router.post('/pricing', createPricingRule);
+router.put('/pricing/:id', updatePricingRule);
 router.get('/pricing', getPricingRules);
 
 router.post('/attribute', createAttribute);
