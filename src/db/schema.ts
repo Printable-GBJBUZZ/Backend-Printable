@@ -200,6 +200,17 @@ export const pricing_rules = pgTable("pricing_rules", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// New blogs table
+export const blogs = pgTable("blogs", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  img: text("img").notNull(),
+  description: text("description").notNull(),
+  content: jsonb("content").notNull(), // Store content as JSONB for the array of {title, bulletpoint}
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // RELATIONS
 export const filesRelations = relations(files, ({ one }) => ({
   folder: one(folders, {

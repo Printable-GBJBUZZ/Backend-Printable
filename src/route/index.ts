@@ -8,6 +8,7 @@ import esignRouter from "./esignRoutes.ts";
 import reviewRouter from "./reviewRoutes.ts";
 import fetchReviewRoutes from "./fetchReviewRoutes.ts";
 import fileManagement from "./fileManagement.ts";
+import blogRouter from "./blogRoutes.ts";
 
 import { Router } from "express";
 import multer from "multer";
@@ -29,6 +30,8 @@ router.use("/esign", esignRouter);
 router.use("/review", reviewRouter);
 router.use("/reviews", fetchReviewRoutes);
 router.use("/fileManagement", fileManagement);
+console.log("Mounting blog routes..."); // Add logging
+router.use("/blog", blogRouter);
 
 router.post("/pdf/merge", upload.array("file"), mergePDFs);
 router.post("/pdf/split", upload.single("file"), splitPDF);
