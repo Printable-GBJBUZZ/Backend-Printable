@@ -49,6 +49,8 @@ export async function getDistanceMatrix(
       return {
         merchantId: m.merchantId,
         shopName: m.shopName,
+        latitude: m.lat,
+        longitude: m.long,
         MerchantImages: m.MerchantImages,
         averageRating: m.average_rating,
         ratingCount: m.rating_count,
