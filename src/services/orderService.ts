@@ -71,6 +71,7 @@ export class OrderService {
   }
 
   public async createOrder(payload: OrderCreatePayload) {
+    console.log(payload);
     const id = crypto.randomUUID();
     const result = await db
       .insert(orders)
@@ -88,7 +89,7 @@ export class OrderService {
         totalAmount: payload.totalAmount,
         documents: payload.documents,
         scheduledPrintTime: payload.scheduledPrintTime,
-      }
+      },
     );
 
     return order;
@@ -104,7 +105,10 @@ export class OrderService {
 
     if (
       payload.status &&
-      (payload.status === "accepted" || payload.status === "declined" || payload.status === "completed" || payload.status === "cancelled")
+      (payload.status === "accepted" ||
+        payload.status === "declined" ||
+        payload.status === "completed" ||
+        payload.status === "cancelled")
     ) {
       await this.pusher.trigger(
         `private-user-${order.userId}`,
@@ -112,7 +116,7 @@ export class OrderService {
         {
           orderId: order.id,
           status: order.status,
-        }
+        },
       );
     }
 

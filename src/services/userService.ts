@@ -64,8 +64,8 @@ export class UserService {
         shopName: merchants.shopName,
         MerchantImages: merchants.shopImages,
         distance: distanceExpression,
-        lat: users.latitude,
-        long: users.longitude,
+        lat: merchants.latitude,
+        long: merchants.longitude,
         average_rating: merchants.average_rating,
         rating_count: merchants.rating_count,
       })
@@ -74,6 +74,10 @@ export class UserService {
       .orderBy(distanceExpression)
       .limit(10);
     const nearestMerchants = await nearestMerchantsQuery.execute();
+    console.log(
+      "NEAREST MERCHANTS@@@@@@@@@@@@@@@@@@@@@@@@@@@",
+      nearestMerchants,
+    );
     const distanceMatrix = await getDistanceMatrix(
       [Number(lat), Number(long)],
       nearestMerchants,
