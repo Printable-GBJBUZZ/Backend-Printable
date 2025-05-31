@@ -10,6 +10,7 @@ import servicesandPriceRouter from './ServicesandPriceRoutes.ts';
 import orderPriceRouter from './OrderPriceRoutes.ts';
 import fetchReviewRoutes from "./fetchReviewRoutes.ts";
 import fileManagement from "./fileManagement.ts";
+import blogRouter from "./blogRoutes.ts";
 
 import { Router } from "express";
 import multer from "multer";
@@ -33,6 +34,8 @@ router.use("/reviews", fetchReviewRoutes);
 router.use('/service', servicesandPriceRouter);
 router.use('/order', orderPriceRouter);
 router.use("/fileManagement", fileManagement);
+console.log("Mounting blog routes..."); // Add logging
+router.use("/blog", blogRouter);
 
 router.post("/pdf/merge", upload.array("file"), mergePDFs);
 router.post("/pdf/split", upload.single("file"), splitPDF);
