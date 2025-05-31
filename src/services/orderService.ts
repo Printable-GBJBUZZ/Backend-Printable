@@ -71,43 +71,20 @@ export class OrderService {
   }
 
   public async createOrder(payload: OrderCreatePayload) {
-    console.log(payload);
     const id = crypto.randomUUID();
-    // Convert scheduledPrintTime to a Date if it's a string
-    const scheduledPrintTime = payload.scheduledPrintTime
-      ? typeof payload.scheduledPrintTime === "string"
-        ? new Date(payload.scheduledPrintTime)
-        : payload.scheduledPrintTime
-      : undefined;
-
     const result = await db
       .insert(orders)
-      .values({
-        id,
-        ...payload,
-        scheduledPrintTime, // Use the converted Date
-      })
+      .values({ id, ...payload })
       .returning();
     const order = result[0];
 
-    // Update merchant metrics: increment totalOrders and pendingOrders
-    await db
-      .update(merchants)
-      .set({
-        totalOrders: sql`${merchants.totalOrders} + 1`,
-        pendingOrders: sql`${merchants.pendingOrders} + 1`,
-        updatedAt: new Date(),
-      })
-      .where(eq(merchants.id, payload.merchantId));
-
     // Trigger a realtime event to notify the merchant
-    await this.pusher.trigger(`merchant-${payload.merchantId}`, "new-order", {
-      orderId: order.id,
-      userId: payload.userId,
-      totalAmount: payload.totalAmount,
-      documents: payload.documents,
-      scheduledPrintTime: payload.scheduledPrintTime,
-    });
+    const res = await this.pusher.trigger(
+      `merchant-${payload.merchantId}`,
+      "new-order",
+      { order }
+    );
+    console.log(res);
 
     return order;
   }
