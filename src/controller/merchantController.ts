@@ -16,10 +16,12 @@ export const getMerchant = async (
     if (!id) res.status(400).json({ error: "Merchant ID is required" });
 
     const merchant = await merchantService.getMerchantWithOrder(id);
-    if (!merchant) res.status(404).json({ error: "Merchant not found" });
+    console.log(merchant);
+    // if (!merchant) res.status(404).json({ error: "Merchant not found" });
 
-    res.status(200).json(merchant);
+    res.status(200).json({ data: merchant ?? [], success: true });
   } catch (error) {
+    res.status(404).json({ error: "server error " });
     next(error);
   }
 };

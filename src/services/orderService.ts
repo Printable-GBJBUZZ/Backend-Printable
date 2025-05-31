@@ -80,17 +80,13 @@ export class OrderService {
     const order = result[0];
 
     // Trigger a realtime event to notify the merchant
-    await this.pusher.trigger(
-      `private-merchant-${payload.merchantId}`,
-      "new-order",
-      {
-        orderId: order.id,
-        userId: payload.userId,
-        totalAmount: payload.totalAmount,
-        documents: payload.documents,
-        scheduledPrintTime: payload.scheduledPrintTime,
-      },
-    );
+    await this.pusher.trigger(`merchant-${payload.merchantId}`, "new-order", {
+      orderId: order.id,
+      userId: payload.userId,
+      totalAmount: payload.totalAmount,
+      documents: payload.documents,
+      scheduledPrintTime: payload.scheduledPrintTime,
+    });
 
     return order;
   }
@@ -110,14 +106,10 @@ export class OrderService {
         payload.status === "completed" ||
         payload.status === "cancelled")
     ) {
-      await this.pusher.trigger(
-        `private-user-${order.userId}`,
-        "order-updated",
-        {
-          orderId: order.id,
-          status: order.status,
-        },
-      );
+      await this.pusher.trigger(`user-${order.userId}`, "order-updated", {
+        orderId: order.id,
+        status: order.status,
+      });
     }
 
     return order;
