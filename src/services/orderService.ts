@@ -90,40 +90,16 @@ export class OrderService {
   }
 
   public async updateOrder(orderId: string, payload: OrderUpdatePayload) {
-    // Convert scheduledPrintTime to a Date if it's a string
-    const scheduledPrintTime = payload.scheduledPrintTime
-      ? typeof payload.scheduledPrintTime === "string"
-        ? new Date(payload.scheduledPrintTime)
-        : payload.scheduledPrintTime
-      : undefined;
-
     const result = await db
       .update(orders)
-      .set({
-        ...payload,
-        scheduledPrintTime, // Use the converted Date
-        updatedAt: new Date(),
-      })
+      .set({ ...payload, updatedAt: new Date() })
       .where(eq(orders.id, orderId))
       .returning();
     const order = result[0];
 
-    // If status changes to completed, update merchant metrics
-    if (payload.status === "completed") {
-      await db
-        .update(merchants)
-        .set({
-          acceptedOrders: sql`${merchants.acceptedOrders} + 1`,
-          pendingOrders: sql`${merchants.pendingOrders} - 1`,
-          totalRevenue: sql`CAST(${merchants.totalRevenue} AS NUMERIC) + ${order.totalAmount}`,
-          updatedAt: new Date(),
-        })
-        .where(eq(merchants.id, order.merchantId));
-    }
-
     if (
       payload.status &&
-      (payload.status === "accepted" ||
+      (payload.status === "processing" ||
         payload.status === "declined" ||
         payload.status === "completed" ||
         payload.status === "cancelled")

@@ -86,9 +86,18 @@ export const updateOrder = async (
 
     // Validate status if provided
     if (payload.status) {
-      const validStatuses = ["pending", "printing", "ready for pickup", "completed"];
+      const validStatuses = [
+        "pending",
+        "printing",
+        "processing",
+        "cancelled",
+        "ready for pickup",
+        "completed",
+      ];
       if (!validStatuses.includes(payload.status)) {
-        return res.status(400).json({ error: `Invalid status. Must be one of: ${validStatuses.join(", ")}` });
+        return res.status(400).json({
+          error: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
+        });
       }
     }
 
