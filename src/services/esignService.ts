@@ -77,7 +77,7 @@ export class EsignService {
     return await db
       .delete(files)
       .where(
-        and(eq(files.id, payload.fileId), eq(files.ownerId, payload.ownerId))
+        and(eq(files.id, payload.fileId), eq(files.ownerId, payload.ownerId)),
       );
   }
 
@@ -112,14 +112,17 @@ export class EsignService {
       .innerJoin(signRequestedFiles, eq(files.id, signRequestedFiles.fileId))
       .innerJoin(
         signRequests,
-        eq(signRequestedFiles.requestId, signRequests.id)
+        eq(signRequestedFiles.requestId, signRequests.id),
       )
       .innerJoin(
         signatureStatus,
-        eq(signatureStatus.requestId, signRequests.id)
+        eq(signatureStatus.requestId, signRequests.id),
       )
       .where(
-        and(eq(files.id, payload.fileId), eq(signatureStatus.email, user.email))
+        and(
+          eq(files.id, payload.fileId),
+          eq(signatureStatus.email, user.email),
+        ),
       );
     for (const signStatus of signatureStatusIdsToUpdate) {
       await db
@@ -128,7 +131,7 @@ export class EsignService {
           signatureKey: calculateFileHash(
             `signed through printable platform date:${new Date()} signId:${
               user.signId
-            }`
+            }`,
           ),
           signId: user.signId,
           status: "signed",
@@ -198,11 +201,11 @@ export class EsignService {
         .innerJoin(signRequestedFiles, eq(files.id, signRequestedFiles.fileId))
         .innerJoin(
           signRequests,
-          eq(signRequestedFiles.requestId, signRequests.id)
+          eq(signRequestedFiles.requestId, signRequests.id),
         )
         .innerJoin(
           signatureStatus,
-          eq(signatureStatus.requestId, signRequests.id)
+          eq(signatureStatus.requestId, signRequests.id),
         )
         .where(eq(files.id, payload.fileId));
     } else {
@@ -218,18 +221,18 @@ export class EsignService {
         .innerJoin(signRequestedFiles, eq(files.id, signRequestedFiles.fileId))
         .innerJoin(
           signRequests,
-          eq(signRequestedFiles.requestId, signRequests.id)
+          eq(signRequestedFiles.requestId, signRequests.id),
         )
         .innerJoin(
           signatureStatus,
-          eq(signatureStatus.requestId, signRequests.id)
+          eq(signatureStatus.requestId, signRequests.id),
         )
 
         .where(
           and(
             eq(files.id, payload.fileId),
-            eq(user[0].email, signatureStatus.email) // <-- add your signee check here
-          )
+            eq(user[0].email, signatureStatus.email), // <-- add your signee check here
+          ),
         );
     }
 
@@ -239,10 +242,10 @@ export class EsignService {
         fileUrl: files.fileKey,
         view: sql<boolean>`true`.as("view"),
         sign: sql<boolean>`
-        CASE 
-          WHEN ${signatureStatus.email} = ${user.email} 
-          THEN true 
-          ELSE false 
+        CASE
+          WHEN ${signatureStatus.email} = ${user.email}
+          THEN true
+          ELSE false
         END
       `.as("sign"),
         status: signatureStatus.status,
@@ -251,7 +254,7 @@ export class EsignService {
       .innerJoin(signRequestedFiles, eq(files.id, signRequestedFiles.fileId))
       .innerJoin(
         signatureStatus,
-        eq(signRequestedFiles.requestId, signatureStatus.requestId)
+        eq(signRequestedFiles.requestId, signatureStatus.requestId),
       )
       .where(eq(files.id, payload.fileId))
       .limit(1);
@@ -261,7 +264,7 @@ export class EsignService {
   }
 
   async getSignRecordsForUser(
-    userId: string
+    userId: string,
   ): Promise<SignRecordStatusPayload[]> {
     const records = await db
       .select({
@@ -333,8 +336,8 @@ export class EsignService {
       .where(
         and(
           inArray(files.id, payload.fileIds),
-          eq(files.ownerId, payload.requestedBy)
-        )
+          eq(files.ownerId, payload.requestedBy),
+        ),
       );
     if (response.length === 0) {
       return {
@@ -379,10 +382,10 @@ export class EsignService {
     if (res) {
       // send email to all mentioned signee email
       const mail_payload = {
-        from: "Acme <onboarding@resend.dev>",
+        from: "Acme <noreply@gbjbuzz.com>",
         to: [payload.signers_email[payload.signers_email.length - 1]],
         subject: "Sign Request Mail",
-        html: `<h1>it works! 
+        html: `<h1>it works!
 link: ${payload.link}
         </h1>`,
       };
