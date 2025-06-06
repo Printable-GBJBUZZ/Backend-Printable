@@ -52,9 +52,9 @@ export class UserService {
   public async getNearestMerchants(lat: string, long: string) {
     const distanceExpression = sql<string>`(
       6371 * acos(
-        cos(radians(${lat})) * cos(radians(cast(${users}.latitude as numeric))) *
-        cos(radians(cast(${users}.longitude as numeric)) - radians(${long})) +
-        sin(radians(${lat})) * sin(radians(cast(${users}.latitude as numeric)))
+        cos(radians(${lat})) * cos(radians(cast(${merchants}.latitude as numeric))) *
+        cos(radians(cast(${merchants}.longitude as numeric)) - radians(${long})) +
+        sin(radians(${lat})) * sin(radians(cast(${merchants}.latitude as numeric)))
       )
     )`;
     console.log({ lat, long });
@@ -75,7 +75,6 @@ export class UserService {
         rating_count: merchants.rating_count,
       })
       .from(merchants)
-      .innerJoin(users, sql`${merchants.userId} = ${users.id}`)
       .orderBy(distanceExpression)
       .limit(10);
 
