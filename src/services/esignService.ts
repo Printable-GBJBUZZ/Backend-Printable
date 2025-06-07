@@ -227,6 +227,7 @@ export class EsignService {
           signeeEmail: signatureStatus.email,
           signedAt: signatureStatus.signedAt,
           signId: signatureStatus.signId,
+          ownerId: files.ownerId,
         })
         .from(files)
         .innerJoin(signRequestedFiles, eq(files.id, signRequestedFiles.fileId))
