@@ -91,7 +91,7 @@ export class OrderService {
     const res = await this.pusher.trigger(
       `merchant-${payload.merchantId}`,
       "new-order",
-      { order }
+      { order },
     );
     console.log(res);
 
@@ -106,7 +106,7 @@ export class OrderService {
       .returning();
     const order = result[0];
 
-    if (payload.status === "accepted") {
+    if (payload.status === "queued") {
       await db
         .update(merchants)
         .set({
