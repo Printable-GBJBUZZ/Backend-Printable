@@ -78,6 +78,15 @@ export class OrderService {
       .returning();
     const order = result[0];
 
+    await db
+      .update(merchants)
+      .set({
+        totalOrders: sql`${merchants.totalOrders} + 1`,
+        pendingOrders: sql`${merchants.pendingOrders} + 1`,
+        updatedAt: new Date(),
+      })
+      .where(eq(merchants.id, payload.merchantId));
+
     // Trigger a realtime event to notify the merchant
     const res = await this.pusher.trigger(
       `merchant-${payload.merchantId}`,
@@ -97,13 +106,25 @@ export class OrderService {
       .returning();
     const order = result[0];
 
+    if (payload.status === "accepted") {
+      await db
+        .update(merchants)
+        .set({
+          acceptedOrders: sql`${merchants.acceptedOrders} + 1`,
+          pendingOrders: sql`${merchants.pendingOrders} - 1`,
+          totalRevenue: sql`CAST(${merchants.totalRevenue} AS NUMERIC) + ${order.totalAmount}`,
+          updatedAt: new Date(),
+        })
+        .where(eq(merchants.id, order.merchantId));
+    }
     if (
       payload.status &&
-      (payload.status === "processing" ||
+      (payload.status === "accepted" ||
         payload.status === "declined" ||
         payload.status === "completed" ||
         payload.status === "queued" ||
-        payload.status === "cancelled")
+        payload.status === "cancelled" ||
+        payload.status === "printing")
     ) {
       await this.pusher.trigger(`user-${order.userId}`, "order-updated", {
         orderId: order.id,

@@ -89,11 +89,12 @@ export const updateOrder = async (
       const validStatuses = [
         "pending",
         "printing",
-        "processing",
         "cancelled",
         "queued",
         "ready for pickup",
         "completed",
+        "accepted",
+        "denied",
       ];
       if (!validStatuses.includes(payload.status)) {
         return res.status(400).json({
