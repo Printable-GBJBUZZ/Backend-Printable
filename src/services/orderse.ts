@@ -72,12 +72,24 @@ export class OrderService {
 
   public async createOrder(payload: OrderCreatePayload) {
     const id = crypto.randomUUID();
+    // Convert scheduledPrintTime to a Date if it's a string
+    const scheduledPrintTime = payload.scheduledPrintTime
+      ? typeof payload.scheduledPrintTime === "string"
+        ? new Date(payload.scheduledPrintTime)
+        : payload.scheduledPrintTime
+      : undefined;
+
     const result = await db
       .insert(orders)
-      .values({ id, ...payload })
+      .values({
+        id,
+        ...payload,
+        scheduledPrintTime, // Use the converted Date
+      })
       .returning();
     const order = result[0];
 
+    // Update merchant metrics: increment totalOrders and pendingOrders
     await db
       .update(merchants)
       .set({
@@ -88,25 +100,42 @@ export class OrderService {
       .where(eq(merchants.id, payload.merchantId));
 
     // Trigger a realtime event to notify the merchant
-    const res = await this.pusher.trigger(
-      `merchant-${payload.merchantId}`,
+    await this.pusher.trigger(
+      `private-merchant-${payload.merchantId}`,
       "new-order",
-      { order },
+      {
+        orderId: order.id,
+        userId: payload.userId,
+        totalAmount: payload.totalAmount,
+        documents: payload.documents,
+        scheduledPrintTime: order.scheduledPrintTime,
+      },
     );
-    console.log(res);
 
     return order;
   }
 
   public async updateOrder(orderId: string, payload: OrderUpdatePayload) {
+    // Convert scheduledPrintTime to a Date if it's a string
+    const scheduledPrintTime = payload.scheduledPrintTime
+      ? typeof payload.scheduledPrintTime === "string"
+        ? new Date(payload.scheduledPrintTime)
+        : payload.scheduledPrintTime
+      : undefined;
+
     const result = await db
       .update(orders)
-      .set({ ...payload, updatedAt: new Date() })
+      .set({
+        ...payload,
+        scheduledPrintTime, // Use the converted Date
+        updatedAt: new Date(),
+      })
       .where(eq(orders.id, orderId))
       .returning();
     const order = result[0];
 
-    if (payload.status === "accepted") {
+    // If status changes to completed, update merchant metrics
+    if (payload.status === "completed") {
       await db
         .update(merchants)
         .set({
@@ -117,17 +146,22 @@ export class OrderService {
         })
         .where(eq(merchants.id, order.merchantId));
     }
+
     if (
       payload.status &&
       (payload.status === "accepted" ||
         payload.status === "declined" ||
         payload.status === "completed" ||
-        payload.status === "printing")
+        payload.status === "cancelled")
     ) {
-      await this.pusher.trigger(`user-${order.userId}`, "order-updated", {
-        orderId: order.id,
-        status: order.status,
-      });
+      await this.pusher.trigger(
+        `private-user-${order.userId}`,
+        "order-updated",
+        {
+          orderId: order.id,
+          status: order.status,
+        },
+      );
     }
 
     return order;

@@ -10,7 +10,7 @@ const orderService = new OrderService();
 export const getOrder = async (
   req: Request<{ id: string }>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const { id } = req.params;
@@ -28,7 +28,7 @@ export const getOrder = async (
 export const getOrdersByMerchant = async (
   req: Request<{ merchantId: string }>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const { merchantId } = req.params;
@@ -44,7 +44,7 @@ export const getOrdersByMerchant = async (
 export const getOrdersByUserId = async (
   req: Request<{ userId: string }>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const { userId } = req.params;
@@ -60,7 +60,7 @@ export const getOrdersByUserId = async (
 export const createOrder = async (
   req: Request<{}, {}, OrderCreatePayload>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const payload: OrderCreatePayload = req.body;
@@ -77,7 +77,7 @@ export const createOrder = async (
 export const updateOrder = async (
   req: Request<{ id: string }, {}, OrderUpdatePayload>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const { id } = req.params;
@@ -89,10 +89,10 @@ export const updateOrder = async (
       const validStatuses = [
         "pending",
         "printing",
-        "processing",
         "cancelled",
-        "ready for pickup",
         "completed",
+        "accepted",
+        "denied",
       ];
       if (!validStatuses.includes(payload.status)) {
         return res.status(400).json({
