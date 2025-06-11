@@ -91,6 +91,7 @@ export const updateOrder = async (
         "printing",
         "processing",
         "cancelled",
+        "queued",
         "ready for pickup",
         "completed",
       ];

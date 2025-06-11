@@ -102,6 +102,7 @@ export class OrderService {
       (payload.status === "processing" ||
         payload.status === "declined" ||
         payload.status === "completed" ||
+        payload.status === "queued" ||
         payload.status === "cancelled")
     ) {
       await this.pusher.trigger(`user-${order.userId}`, "order-updated", {
