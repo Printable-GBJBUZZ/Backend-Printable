@@ -62,7 +62,7 @@ export const orders = pgTable("orders", {
     onDelete: "cascade",
   }),
   status: text("status", {
-    enum: ["pending", "printing", "ready for pickup", "completed"],
+    enum: ["pending", "accepted", "denied", "printing", "completed"],
   })
     .default("pending")
     .notNull(),
