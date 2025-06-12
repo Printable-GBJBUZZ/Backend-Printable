@@ -1,5 +1,5 @@
 import Pusher from "pusher";
-import { orders, merchants } from "../db/schema.ts";
+import { orders, merchants, users } from "../db/schema.ts";
 import { db } from "../configs/db.ts";
 import { eq, sql } from "drizzle-orm";
 
@@ -49,6 +49,7 @@ export class OrderService {
     const result = await db
       .select()
       .from(orders)
+
       .where(eq(orders.id, orderId))
       .limit(1);
     return result.length > 0 ? result[0] : null;
@@ -56,8 +57,13 @@ export class OrderService {
 
   public async getOrdersByMerchantId(merchantId: string) {
     const result = await db
-      .select()
+      .select({
+        userPhoneNumber: users.phone,
+        userEmail: users.email,
+        ...orders,
+      })
       .from(orders)
+      .innerJoin(users, eq(users.id, orders.userId))
       .where(eq(orders.merchantId, merchantId));
     return result;
   }
