@@ -99,6 +99,12 @@ export class OrderService {
       "new-order",
       { order },
     );
+ const res = await this.pusher.trigger(
+      `user-${payload.merchantId}`,
+      "chat",
+      { chatPaylod },
+    );
+
     console.log(res);
 
     return order;
