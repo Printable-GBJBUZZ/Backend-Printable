@@ -31,7 +31,7 @@ export class UserService {
     const { name, email, phone, state, city, address, latitude, longitude } =
       payload;
 
-    const result = await db
+    await db
       .update(users)
       .set({
         name,
@@ -46,7 +46,13 @@ export class UserService {
       })
       .where(eq(users.id, id));
 
-    return result;
+    // Fetch and return the updated user
+    const updatedUser = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+    return updatedUser.length > 0 ? updatedUser[0] : null;
   }
 
   public async getNearestMerchants(lat: string, long: string) {

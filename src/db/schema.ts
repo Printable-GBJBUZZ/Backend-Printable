@@ -6,8 +6,8 @@ import {
   timestamp,
   integer,
   jsonb,
-  boolean,
   numeric,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { relations } from "drizzle-orm";
@@ -23,13 +23,15 @@ export const users = pgTable("users", {
   address: text("address"),
   latitude: text("latitude"),
   longitude: text("longitude"),
+  otp: text("otp"), // ✅ Add this
+  is_verified: boolean("is_verified").default(false), // ✅ Add this
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const merchants = pgTable("merchants", {
   id: text("id").primaryKey(),
-  name: text("name").notNull(),
+  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
   email: text("email").unique().notNull(),
   phone: text("phone").unique(),
   state: text("state"),
@@ -37,7 +39,7 @@ export const merchants = pgTable("merchants", {
   address: text("address"),
   latitude: text("latitude"),
   longitude: text("longitude"),
-  shopName: text("shop_name"),
+  shopName: text("shop_name").notNull(),
   shopImages: text("images")
     .array()
     .default(sql`ARRAY[]::text[]`),
@@ -46,9 +48,7 @@ export const merchants = pgTable("merchants", {
     .notNull(),
   rating_count: integer("rating_count").default(0).notNull(),
   totalOrders: integer("total_orders").default(0).notNull(),
-  totalRevenue: numeric("total_revenue", { precision: 10, scale: 2 })
-    .default("0.00")
-    .notNull(),
+  totalRevenue: numeric("total_revenue", { precision: 10, scale: 2 }).default("0.00").notNull(),
   pendingOrders: integer("pending_orders").default(0).notNull(),
   acceptedOrders: integer("accepted_orders").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -61,11 +61,7 @@ export const orders = pgTable("orders", {
   merchantId: text("merchant_id").references(() => merchants.id, {
     onDelete: "cascade",
   }),
-  status: text("status", {
-    enum: ["pending", "accepted", "denied", "printing", "completed"],
-  })
-    .default("pending")
-    .notNull(),
+  status: text("status", { enum: ["pending", "printing", "ready for pickup", "completed"] }).default("pending").notNull(),
   totalAmount: integer("total_amount").notNull(),
   paymentMethod: text("payment_method").notNull(),
   scheduledPrintTime: timestamp("scheduled_print_time"),

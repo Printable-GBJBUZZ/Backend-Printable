@@ -1,0 +1,53 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-4g7h-8i9j-0k1l2m3n4o5p",
+    "name": "Google Login",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Google Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"idToken\": \"{{firebaseIdToken}}\"}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/auth/google",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "auth", "google"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test(\"Status is 200\", function () {",
+          "    pm.response.to.have.status(200);",
+          "});",
+          "pm.test(\"Response contains token\", function () {",
+          "    var jsonData = pm.response.json();",
+          "    pm.expect(jsonData.status).to.equal(\"success\");",
+          "    pm.expect(jsonData.data.token).to.exist;",
+          "    pm.environment.set(\"authToken\", jsonData.data.token);",
+          "    console.log(\"Token stored in env: \" + jsonData.data.token);",
+          "});"
+        ]
+      }
+    }
+  ]
+}

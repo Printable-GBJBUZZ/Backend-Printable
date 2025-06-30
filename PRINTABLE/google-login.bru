@@ -1,0 +1,31 @@
+version: 1
+name: Google Login
+method: POST
+endpoint: /api/auth/google
+baseUrl: http://localhost:5000
+headers:
+  - name: Content-Type
+    value: application/json
+body:
+  mode: raw
+  raw: |
+    {
+      "idToken": "{{firebaseIdToken}}"
+    }
+tests:
+  - name: Status is 200
+    script: |
+      if (response.status === 200) {
+        console.log("Google Login successful");
+      } else {
+        throw new Error("Expected status 200, got " + response.status);
+      }
+  - name: Response contains token
+    script: |
+      const data = JSON.parse(response.body);
+      if (data.status === "success" && data.data.token) {
+        env.set("authToken", data.data.token);
+        console.log("Token stored in env: " + data.data.token);
+      } else {
+        throw new Error("No token in response: " + response.body);
+      }

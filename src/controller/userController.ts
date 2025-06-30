@@ -13,11 +13,11 @@ export const getUserController = async (
     const { id } = req.params;
 
     if (!id) {
-      res.status(400).json({ error: "User ID is required" });
+      return res.status(400).json({ error: "User ID is required" }); // Add return
     }
     const user = await userService.getUser(id);
     if (!user) {
-      res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: "User not found" }); // Add return
     }
     res.status(200).json(user);
   } catch (error) {
@@ -35,11 +35,11 @@ export const updateUserController = async (
     const { id } = req.params;
     const payload = req.body;
     if (!id) {
-      res.status(400).json({ error: "User ID is required" });
+      return res.status(400).json({ error: "User ID is required" }); // Add return
     }
     const updatedUser = await userService.updateUser({ ...payload }, id);
     if (!updatedUser) {
-      res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: "User not found" }); // Add return
     }
     res.status(200).json({
       message: "User updated successfully",
@@ -61,7 +61,7 @@ export const getNearestMerchants = async (
     const long = parseFloat(req.query.long as string);
 
     if (isNaN(lat) || isNaN(long)) {
-      res.status(400).json({ error: "Invalid latitude or longitude" });
+      return res.status(400).json({ error: "Invalid latitude or longitude" }); // Add return
     }
 
     const nearestMerchants = await userService.getNearestMerchants(

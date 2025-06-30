@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Firebase Login</title>
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
+    import { getAuth, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAVVtElEOFIbypiIz-SAx2rYsEHGRvCUoM",
+      authDomain: "printable-69ff2.firebaseapp.com",
+      projectId: "printable-69ff2",
+      storageBucket: "printable-69ff2.appspot.com",
+      messagingSenderId: "571827507696",
+      appId: "1:571827507696:web:1582fb636535a288608d35",
+      measurementId: "G-H9M3GRJYFW"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    provider.addScope('profile');
+    provider.addScope('email');
+
+    let idToken;
+
+    document.getElementById('googleLogin').addEventListener('click', () => {
+      signInWithPopup(auth, provider)
+        .then((result) => {
+          const user = result.user;
+          if (user) {
+            user.getIdToken().then((firebaseIdToken) => {
+              idToken = firebaseIdToken;
+              console.log('Firebase ID Token:', idToken);
+              fetch('http://localhost:5000/api/auth/google', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idToken })
+              })
+              .then(response => response.json())
+              .then(data => {
+                console.log('Response data:', data);
+                if (data.status === 'pending') {
+                  showPhoneVerification(data.data.userId, data.data.phone);
+                } else if (data.status === 'success') {
+                  console.log('Logged in with token:', data.data.token);
+                }
+              })
+              .catch(error => console.error('Server Error:', error));
+            });
+          } else {
+            console.error('No user returned:', result);
+          }
+        })
+        .catch(error => {
+          console.error('Google Login Error:', error);
+          if (error.code === 'auth/popup-closed-by-user') {
+            console.log('Popup was closed by the user.');
+          }
+        });
+    });
+
+    function showPhoneVerification(userId, phone) {
+      const phoneInput = prompt('Enter your phone number (e.g., 919876543210):', phone || '');
+      if (phoneInput && idToken) {
+        fetch('http://localhost:5000/api/auth/otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken, phoneNumber: phoneInput })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'pending') {
+            const otp = prompt('Enter the OTP sent to your phone:');
+            verifyPhone(userId, phoneInput, otp);
+          } else {
+            console.error('Unexpected response:', data);
+          }
+        })
+        .catch(error => console.error('OTP Request Error:', error));
+      } else {
+        console.error('idToken is missing');
+      }
+    }
+
+    function verifyPhone(userId, phoneNumber, otp) {
+      fetch('http://localhost:5000/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, phoneNumber, otp })
+      })
+      .then(response => response.json())
+      .then(data => console.log('Verification result:', data))
+      .catch(error => console.error('Verification Error:', error));
+    }
+  </script>
+</head>
+<body>
+  <button id="googleLogin">Login with Google</button>
+</body>
+</html>
