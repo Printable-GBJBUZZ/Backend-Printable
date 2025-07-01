@@ -15,8 +15,6 @@ export const sendChatMessage = async (req: Request, res: Response, next: NextFun
 
 
 
-
-
 export const getConversation = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { userA, userB } = req.query;
