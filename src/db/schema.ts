@@ -12,6 +12,16 @@ import {
 import { sql } from "drizzle-orm";
 import { relations } from "drizzle-orm";
 
+export const chatMessages = pgTable("chat_messages", {
+  id: text("id").primaryKey(),
+  senderId: text("sender_id").notNull(),
+  receiverId: text("receiver_id").notNull(),
+  message: text("message").notNull(),
+  isRead: boolean("is_read").default(false),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
