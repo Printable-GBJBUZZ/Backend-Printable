@@ -20,5 +20,7 @@ export const getConversation = async (req: Request, res: Response, next: NextFun
     res.status(200).json(result);
   } catch (error) {
     next(error);
+
+    
   }
 };

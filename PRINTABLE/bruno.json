@@ -1,9 +1,17 @@
 {
+  "name": "Printable",
   "version": "1",
-  "name": "PRINTABLE",
-  "type": "collection",
-  "ignore": [
-    "node_modules",
-    ".git"
-  ]
+  "items": [],
+  "environments": [],
+  "brunoConfig": {
+    "version": "1",
+    "name": "Printable",
+    "type": "collection",
+    "ignore": [
+      "node_modules",
+      ".git"
+    ],
+    "size": 0,
+    "filesCount": 0
+  }
 }

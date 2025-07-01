@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "Printable",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
