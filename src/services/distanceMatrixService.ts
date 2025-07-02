@@ -5,6 +5,7 @@ const BASE_URL =
 
 export interface Merchant {
   merchantId: string;
+  address: string;
   shopName: string;
   MerchantImages: string[] | null;
   distance: string;
@@ -52,6 +53,7 @@ export async function getDistanceMatrix(
         latitude: m.lat,
         longitude: m.long,
         MerchantImages: m.MerchantImages,
+        address: m.address,
         averageRating: m.average_rating,
         ratingCount: m.rating_count,
         googleDistance: element.distance ? element.distance.text : "N/A",

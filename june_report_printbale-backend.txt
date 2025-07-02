@@ -1,0 +1,36 @@
+2025-06-12 | Merge branch 'prod' of https://github.com/Printable-GBJBUZZ/Backend-Printable into prod
+2025-06-12 | updated: getOrdersByMerchantId
+2025-06-11 | merchant marker on orders page fixedd
+2025-06-11 | updated:prod with status options addition
+2025-06-11 | added: Queued status options
+2025-06-11 | logic for matrix change like accepted order, total revinue, pending order changedd
+2025-06-11 | logic for matrix change like accepted order, total revinue, pending order changed
+2025-06-11 | changed status in orderservice
+2025-06-09 | updated:merchant schema
+2025-06-07 | updated:esign isValidSigner
+2025-06-07 | Merge branch 'prod' of https://github.com/Printable-GBJBUZZ/Backend-Printable into prod
+2025-06-07 | fixed:esign query logic
+2025-06-06 | fixed for signup errors, changed merchant-user schema and edited webhooks
+2025-06-01 | Merge branch 'prod' of https://github.com/Printable-GBJBUZZ/Backend-Printable into prod
+2025-06-01 | fixed:accept:cancelled
+2025-06-01 | resend configured
+2025-05-31 | fixed:id undefined
+2025-05-31 | ready0
+2025-05-31 | phone not unique
+2025-05-30 | working demo backend piy
+2025-05-29 | Create and get the blogs
+2025-05-29 | modified nearest merchant, added lat, long
+2025-05-29 | bla
+2025-05-27 | Updated order status when user create any order
+2025-05-26 | merging price calculate
+2025-05-26 | updated schema
+2025-05-24 | review complete but check it once
+2025-05-23 | final price calculate api
+2025-05-22 | Updated Files
+2025-05-21 | Review and Merchant Service Price
+2025-05-19 | Merge branch 'roshan-new-main'
+2025-05-19 | sudoo
+2025-05-18 | fixed:getFiles
+2025-05-18 | update:getFiles
+2025-05-17 | merged completed
+2025-05-17 | fixed:run error
