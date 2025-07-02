@@ -97,12 +97,7 @@ export class OrderService {
     const res = await this.pusher.trigger(
       `merchant-${payload.merchantId}`,
       "new-order",
-      { order },
-    );
- const res = await this.pusher.trigger(
-      `user-${payload.merchantId}`,
-      "chat",
-      { chatPaylod },
+      { order }
     );
 
     console.log(res);
@@ -138,7 +133,7 @@ export class OrderService {
         payload.status === "cancelled" ||
         payload.status === "printing")
     ) {
-      await this.pusher.trigger(`user-${order.userId}`, "order-updated", {
+      await this.pusher.trigger(`user-${order.userId}`, "order-status", {
         orderId: order.id,
         status: order.status,
       });
