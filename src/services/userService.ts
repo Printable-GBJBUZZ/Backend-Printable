@@ -62,6 +62,7 @@ export class UserService {
     const nearestMerchantsQuery = db
       .select({
         merchantId: merchants.id,
+        address: merchants.address,
         shopName: merchants.shopName,
         MerchantImages: merchants.shopImages,
         totalOrders: merchants.totalOrders,
