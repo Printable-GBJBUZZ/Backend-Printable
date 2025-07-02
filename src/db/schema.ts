@@ -30,12 +30,10 @@ export const users = pgTable("users", {
 export const merchants = pgTable("merchants", {
   id: text("id").primaryKey(),
   userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
-
   email: text("email").unique().notNull(),
   phone: text("phone").unique(),
   state: text("state"),
   city: text("city"),
-
   address: text("address"),
   latitude: text("latitude"),
   longitude: text("longitude"),
@@ -44,7 +42,7 @@ export const merchants = pgTable("merchants", {
     .array()
     .default(sql`ARRAY[]::text[]`),
   average_rating: numeric("average_rating", { precision: 10, scale: 2 })
-    .default(0)
+    .default("0")
     .notNull(),
   rating_count: integer("rating_count").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -98,6 +96,22 @@ export const files = pgTable("files", {
     onDelete: "cascade",
   }),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const file_versions = pgTable("file_versions", {
+  id: text("id").primaryKey(),
+  fileId: text("file_id")
+    .notNull()
+    .references(() => files.id, { onDelete: "cascade" }),
+  versionId: text("version_id").notNull().unique(),
+  fileName: text("file_name").notNull(),
+  fileKey: text("file_key").notNull(),
+  fileSize: integer("file_size").notNull(),
+  fileType: text("file_type").notNull(),
+  ownerId: text("owner_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -169,7 +183,7 @@ export const merchant_services = pgTable("merchant_services", {
     .references(() => services.id, { onDelete: "cascade" }),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
 });
 
 export const attributes = pgTable("attributes", {
@@ -199,10 +213,22 @@ export const pricing_rules = pgTable("pricing_rules", {
 });
 
 // RELATIONS
-export const filesRelations = relations(files, ({ one }) => ({
+export const filesRelations = relations(files, ({ one, many }) => ({
   folder: one(folders, {
     fields: [files.folderId],
     references: [folders.id],
+  }),
+  versions: many(file_versions),
+}));
+
+export const fileVersionsRelations = relations(file_versions, ({ one }) => ({
+  file: one(files, {
+    fields: [file_versions.fileId],
+    references: [files.id],
+  }),
+  owner: one(users, {
+    fields: [file_versions.ownerId],
+    references: [users.id],
   }),
 }));
 

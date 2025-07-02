@@ -1,74 +1,185 @@
-// File: src/controller/convertController.ts
-
-import { Request, Response } from "express";
-import { ConvertService, MergePDFPayload, SplitPDFPayload } from "../services/convertService.ts"; // Removed ConvertPayload, CompressPDFPayload
+import { resolve } from "jsr:@std/path";
+import { PDFDocument, StandardFonts } from "https://cdn.skypack.dev/pdf-lib@1.17.1";
+import { ConvertService } from "../services/convertService.ts";
+import { FilesService } from "../services/filesService.ts";
 
 const convertService = new ConvertService();
+const filesService = new FilesService();
 
-export const mergePDFs = async (req: Request, res: Response) => {
+export const watermarkPDF = async (req: any, res: any, next: any) => {
   try {
-    if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
-      return res.status(400).json({ success: false, error: "No files uploaded" });
+    const { userId, watermarkText } = req.body;
+    const file = req.file;
+
+    if (!userId || !watermarkText || !file) {
+      return res.status(400).json({ error: "userId, watermarkText, and file are required" });
     }
 
-    const { userId } = req.body;
-    const inputFiles = (req.files as Express.Multer.File[]).map(file => file.path);
-    const payload: MergePDFPayload = {
-      inputFiles,
-      outputDir: "/tmp",
+    const outputDir = resolve(Deno.cwd(), "tmp");
+    await Deno.mkdir(outputDir, { recursive: true });
+
+    console.log(`Watermarking file: ${file.path}, mimetype: ${file.mimetype}, originalname: ${file.originalname}`);
+
+    const result = await convertService.watermarkPDF({
+      inputFile: file.path,
+      outputDir,
       userId,
-    };
-
-    const result = await convertService.mergePDFs(payload);
-    const history = userId ? await convertService.getHistory(userId) : {};
-
-    res.json({
-      success: true,
-      result: [result],
-      history,
+      watermarkText,
     });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: `Merge failed: ${error.message}` });
-  }
-};
-
-export const splitPDF = async (req: Request, res: Response) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ success: false, error: "No file uploaded" });
-    }
-
-    const { userId, pageRanges } = req.body;
-    const payload: SplitPDFPayload = {
-      inputFile: req.file.path,
-      outputDir: "/tmp",
-      pageRanges: pageRanges || "1",
-      userId,
-    };
-
-    const result = await convertService.splitPDF(payload);
-    const history = userId ? await convertService.getHistory(userId) : {};
 
     res.json({
       success: true,
       result,
-      history,
+      history: { watermarked: [result] },
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: `Split failed: ${error.message}` });
+    console.error("Watermark error:", error);
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 
-export const getHistory = async (req: Request, res: Response) => {
+export const pptxToPDF = async (req: any, res: any, next: any) => {
+  try {
+    const { userId } = req.body;
+    const file = req.file;
+
+    if (!userId || !file) {
+      return res.status(400).json({ error: "userId and file are required" });
+    }
+
+    if (!file.mimetype.includes("presentation")) {
+      return res.status(400).json({ error: "File must be a PPTX document" });
+    }
+
+    const outputDir = resolve(Deno.cwd(), "tmp");
+    await Deno.mkdir(outputDir, { recursive: true });
+
+    // Validate file exists
+    const stat = await Deno.stat(file.path).catch(() => null);
+    if (!stat || !stat.isFile) {
+      throw new Error(`Uploaded file not found: ${file.path}`);
+    }
+    console.log(`Processing PPTX: ${file.path}, mimetype: ${file.mimetype}, originalname: ${file.originalname}, size: ${file.size}`);
+
+    const result = await filesService.pptxToPDF({
+      inputFile: file.path,
+      outputDir,
+      userId,
+      originalFileName: file.originalname,
+    });
+
+    res.json({ success: true, result });
+  } catch (error: any) {
+    console.error("PPTX to PDF error:", error);
+    res.status(500).json({ success: false, error: `PPTX to PDF conversion failed: ${error.message}` });
+  }
+};
+
+export const docxToPDF = async (req: any, res: any, next: any) => {
+  try {
+    const { userId } = req.body;
+    const file = req.file;
+
+    if (!userId || !file) {
+      return res.status(400).json({ error: "userId and file are required" });
+    }
+
+    if (!file.mimetype.includes("wordprocessingml.document")) {
+      return res.status(400).json({ error: "File must be a DOCX document" });
+    }
+
+    const outputDir = resolve(Deno.cwd(), "tmp");
+    await Deno.mkdir(outputDir, { recursive: true });
+
+    // Validate file exists
+    const stat = await Deno.stat(file.path).catch(() => null);
+    if (!stat || !stat.isFile) {
+      throw new Error(`Uploaded file not found: ${file.path}`);
+    }
+    console.log(`Processing DOCX: ${file.path}, mimetype: ${file.mimetype}, originalname: ${file.originalname}, size: ${file.size}`);
+
+    const result = await filesService.docxToPDF({
+      inputFile: file.path,
+      outputDir,
+      userId,
+      originalFileName: file.originalname,
+    });
+
+    res.json({ success: true, result });
+  } catch (error: any) {
+    console.error("DOCX to PDF error:", error);
+    res.status(500).json({ success: false, error: `DOCX to PDF conversion failed: ${error.message}` });
+  }
+};
+
+export const mergePDFs = async (req: any, res: any, next: any) => {
+  try {
+    const files = req.files;
+    const { userId } = req.body;
+
+    if (!userId || !files || files.length < 2) {
+      return res.status(400).json({ error: "userId and at least two files are required" });
+    }
+
+    const inputFiles = files.map((file: any) => file.path);
+    const outputDir = resolve(Deno.cwd(), "tmp");
+    await Deno.mkdir(outputDir, { recursive: true });
+
+    console.log(`Merging files: ${inputFiles.join(", ")}`);
+
+    const result = await convertService.mergePDFs({
+      inputFiles,
+      outputDir,
+      userId,
+    });
+
+    res.json({ success: true, result });
+  } catch (error: any) {
+    console.error("Merge PDFs error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+export const splitPDF = async (req: any, res: any, next: any) => {
+  try {
+    const { userId, pageRanges } = req.body;
+    const file = req.file;
+
+    if (!userId || !file || !pageRanges) {
+      return res.status(400).json({ error: "userId, file, and pageRanges are required" });
+    }
+
+    const outputDir = resolve(Deno.cwd(), "tmp");
+    await Deno.mkdir(outputDir, { recursive: true });
+
+    console.log(`Splitting file: ${file.path}, pageRanges: ${pageRanges}`);
+
+    const result = await convertService.splitPDF({
+      inputFile: file.path,
+      outputDir,
+      userId,
+      pageRanges: JSON.parse(pageRanges),
+    });
+
+    res.json({ success: true, result });
+  } catch (error: any) {
+    console.error("Split PDF error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+export const getHistory = async (req: any, res: any, next: any) => {
   try {
     const { userId } = req.query;
-    if (!userId || typeof userId !== "string") {
-      return res.status(400).json({ success: false, error: "userId query parameter is required and must be a string" });
+
+    if (!userId) {
+      return res.status(400).json({ error: "userId is required" });
     }
 
     const history = await convertService.getHistory(userId);
     res.json({ success: true, history });
   } catch (error: any) {
-    res.status(500).json({ success: false, error: `Failed to get history: ${error.message}` });
+    console.error("Get history error:", error);
+    res.status(500).json({ success: false, error: error.message });
   }
 };
