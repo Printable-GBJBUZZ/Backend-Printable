@@ -1,7 +1,7 @@
 import { resolve } from "jsr:@std/path";
 import { db } from "../configs/db.ts";
 import { files, file_versions } from "../db/schema.ts";
-import { eq } from "drizzle-orm";
+import { desc, eq  } from "drizzle-orm";
 import { PutObjectCommand, GetObjectCommand } from "npm:@aws-sdk/client-s3@3.614.0";
 import { getSignedUrl } from "npm:@aws-sdk/s3-request-presigner@3.614.0";
 import s3Client from "../configs/s3.ts";
@@ -147,7 +147,7 @@ export class FilesService {
       .select()
       .from(file_versions)
       .where(eq(file_versions.fileId, fileId))
-      .orderBy(file_versions.createdAt.desc());
+      .orderBy(desc(file_versions.createdAt));
   }
 
   async getFileVersion(fileId: string, versionId: string): Promise<any> {

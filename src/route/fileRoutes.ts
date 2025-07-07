@@ -38,6 +38,6 @@ router.post("/:fileId/versions", upload.single("file"), (req, res, next) => {
   createFileVersion(req, res, next);
 });
 router.get("/:fileId/versions", getFileVersions);
-router.get("/:fileId/version/:versionId", getFileVersion);
+router.get("/:fileId/versions/:versionId", getFileVersion);
 
 export default router;

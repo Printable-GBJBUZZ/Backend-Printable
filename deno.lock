@@ -5565,6 +5565,8 @@
     "https://esm.sh/utils-merge@1.0.1/denonext/utils-merge.mjs": "fbf4a8c9d681188e99fd505aaa00cd21903d001eff5ad4a5ceb5a9ceb0e3d451",
     "https://esm.sh/uuid@3.4.0/denonext/v4.mjs": "8b957a5849b03b73ee2658fab1b20a2003875c00900a4ad197d15e92fb9d8aed",
     "https://esm.sh/uuid@3.4.0/v4?target=denonext": "07d4965f7cc4c0d0b90555fbdeaf99e18f927c807e003e1c3e77d54a4c2afb21",
+    "https://esm.sh/uuid@9.0.1": "11c38693969f62a617de5ceee47ddc29ae892ae81491378a933436788fad3c8b",
+    "https://esm.sh/uuid@9.0.1/denonext/uuid.mjs": "25ffc9943d4b3691671de82d30c147ecfa2a8fae6f4319db28dadb0dacc19450",
     "https://esm.sh/validator@13.15.15/denonext/lib/contains.mjs": "683afd277ce55ba97424d322ec04ef6c685ebc83283fa160d9c2d1ac9a1ace35",
     "https://esm.sh/validator@13.15.15/denonext/lib/isAlpha.mjs": "1817695ddc0dcbe13b9a744a84f7e581473d2e23df76b1f483656d5d2349e52f",
     "https://esm.sh/validator@13.15.15/denonext/lib/isAlphanumeric.mjs": "8d37ebfb02ae6a18cffbb9ea9d3fe4e3e98e46dd24cb7a5c37fde1c03b9538f9",
