@@ -25,7 +25,7 @@ export class ChatService {
     });
   }
 
-  async sendMessage(senderId: string, receiverId: string, message: string): Promise<Message> {
+  async sendMessage(senderId: string, receiverId: string, message: string,role:string): Promise<Message> {
     if (!message.trim()) throw new Error("Message cannot be empty");
 
     const newMessage = {
@@ -39,7 +39,7 @@ export class ChatService {
 
     await db.insert(chatMessages).values(newMessage);
 
-    const channelName = receiverId.startsWith("user_") 
+    const channelName = role==="user" 
       ? `chat-userid-${receiverId}` 
       : `merchant-${receiverId}`;
 
