@@ -9,6 +9,9 @@ import reviewRouter from "./reviewRoutes.ts";
 import fetchReviewRoutes from "./fetchReviewRoutes.ts";
 import fileManagement from "./fileManagement.ts";
 import chatRoutes from "./chatRoutes.ts";
+import userManagementRoutes from "./userManagementRoutes.ts";
+import merchantManagementRoutes from "./merchantManagementRoutes.ts";
+import orderManagementRoutes from "./orderManagementRoutes.ts";
 
 import { Router } from "express";
 import multer from "multer";
@@ -17,7 +20,7 @@ import {
   mergePDFs,
   splitPDF,
   getHistory,
-} from "../controller/convertController.ts"; // Removed convertFile, compressPDF
+} from "../controller/convertController.ts"; 
 const router = express.Router();
 
 const upload = multer({ dest: "/tmp" });
@@ -31,6 +34,9 @@ router.use("/review", reviewRouter);
 router.use("/reviews", fetchReviewRoutes);
 router.use("/fileManagement", fileManagement);
 router.use("/chat", chatRoutes);
+router.use("/users", userManagementRoutes);
+router.use("/merchants", merchantManagementRoutes);
+router.use("/orders", orderManagementRoutes);
 
 router.post("/pdf/merge", upload.array("file"), mergePDFs);
 router.post("/pdf/split", upload.single("file"), splitPDF);
