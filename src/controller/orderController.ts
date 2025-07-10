@@ -57,14 +57,13 @@ export const getOrdersByUserId = async (
   }
 };
 
-
 export const createOrder = async (
   req: Request<{}, {}, OrderCreatePayload>,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const payload:OrderCreatePayload = req.body;
+    const payload: OrderCreatePayload = req.body;
     const newOrder = await orderService.createOrder(payload);
     res.status(201).json({
       message: "Order created successfully",
@@ -84,6 +83,25 @@ export const updateOrder = async (
     const { id } = req.params;
     const payload = req.body;
     if (!id) res.status(400).json({ error: "Order ID is required" });
+
+    // Validate status if provided
+    if (payload.status) {
+      const validStatuses = [
+        "pending",
+        "printing",
+        "cancelled",
+        "queued",
+        "ready for pickup",
+        "completed",
+        "accepted",
+        "denied",
+      ];
+      if (!validStatuses.includes(payload.status)) {
+        return res.status(400).json({
+          error: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
+        });
+      }
+    }
 
     const updatedOrder = await orderService.updateOrder(id, payload);
     if (!updatedOrder)

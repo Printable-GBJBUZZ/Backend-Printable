@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 
 export interface MerchantPayload {
   id: string;
+  name: string;
   userId: string;
   email: string;
   phone: string | null;

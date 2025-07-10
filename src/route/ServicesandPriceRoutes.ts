@@ -1,4 +1,4 @@
-import express from 'express';
+import express from "express";
 import {
   createService,
   getService,
@@ -9,21 +9,23 @@ import {
   getPricingRules,
   createAttribute,
   createAttributeValue,
-} from '../controller/ServicesandPriceController.ts';
+  updatePricingRuleController,
+} from "../controller/ServicesandPriceController.ts";
 
 const router = express.Router();
 
-router.post('/', createService);
-router.get('/:id', getService);
-router.get('/', getAllServices);
+router.post("/", createService);
+router.get("/:id", getService);
+router.get("/", getAllServices);
 
-router.post('/merchant', createMerchantService);
-router.get('/merchant/services', getMerchantServices);
+router.post("/merchant", createMerchantService);
+router.get("/merchant/services", getMerchantServices);
 
-router.post('/pricing', createPricingRule);
-router.get('/pricing', getPricingRules);
+router.post("/pricing/update", updatePricingRuleController);
+router.post("/pricing", createPricingRule);
+router.get("/pricing", getPricingRules);
 
-router.post('/attribute', createAttribute);
-router.post('/attribute/value', createAttributeValue);
+router.post("/attribute", createAttribute);
+router.post("/attribute/value", createAttributeValue);
 
 export default router;

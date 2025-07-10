@@ -107,7 +107,7 @@ export const updateFile = (req: any, res: any) => {
           fileType: mimetype,
           fileHash,
         },
-        fileId,
+        fileId
       );
 
       return res.status(200).json(response);
@@ -133,7 +133,7 @@ export const DeleteFile = async (req: any, res: any, next: NextFunction) => {
 export const uploadSignedDocument = (
   req: any,
   res: any,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   upload(req, res, async (err: any) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -161,7 +161,7 @@ export const uploadSignedDocument = (
 
       await esignService.updateFile(
         { fileKey: fileUrl, fileSize: size, fileType: mimetype, fileHash },
-        fileId,
+        fileId
       );
 
       return res.json({
@@ -178,10 +178,11 @@ export const uploadSignedDocument = (
 export const sendSigningRequest = async (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   try {
     const response = await esignService.sendSigningRequest(req.body);
+    console.log(response);
     return res.status(200).json(response);
   } catch (error) {
     next(error);
@@ -192,7 +193,7 @@ export const sendSigningRequest = async (
 export const isSignerValid = async (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   const { fileId, userId } = req.params;
   try {
