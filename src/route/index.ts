@@ -38,13 +38,13 @@ router.use("/esign", esignRouter);
 router.use("/review", reviewRouter);
 router.use("/reviews", fetchReviewRoutes);
 router.use('/service', servicesandPriceRouter);
-router.use('/order', orderPriceRouter);
+router.use('/order-price', orderPriceRouter);
 router.use("/fileManagement", fileManagement);
 router.use("/chat", chatRoutes);
 
 router.use("/users", userManagementRoutes);
 router.use("/merchants", merchantManagementRoutes);
-router.use("/orders-price", orderManagementRoutes);
+router.use("/orders", orderManagementRoutes);
 console.log("Mounting blog routes..."); // Add logging
 router.use("/blog", blogRouter);
 
