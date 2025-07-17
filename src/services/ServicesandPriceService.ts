@@ -1,6 +1,12 @@
-import { db } from '../configs/db.ts';
-import { services, merchant_services, pricing_rules, attributes, attribute_values } from '../db/schema.ts';
-import { eq, and } from 'drizzle-orm';
+import { db } from "../configs/db.ts";
+import {
+  services,
+  merchant_services,
+  pricing_rules,
+  attributes,
+  attribute_values,
+} from "../db/schema.ts";
+import { eq, and } from "drizzle-orm";
 
 export interface CreateServiceInput {
   id: string;
@@ -18,7 +24,7 @@ export interface CreateMerchantServiceInput {
 export interface CreatePricingRuleInput {
   id: string;
   merchantServiceId: string;
-  price: number;
+  price: string;
   attributes: Record<string, string>;
 }
 
@@ -36,16 +42,38 @@ export interface CreateAttributeValueInput {
 
 export class ServicesandPriceService {
   public async createService(payload: CreateServiceInput) {
-    const [newService] = await db.insert(services).values({
-      id: payload.id,
-      name: payload.name,
-      description: payload.description,
-    }).returning();
+    const [newService] = await db
+      .insert(services)
+      .values({
+        id: payload.id,
+        name: payload.name,
+        description: payload.description,
+      })
+      .returning();
     return newService;
   }
+  public async updatePricingRule(payload: CreatePricingRuleInput) {
+    const updatedRows = await db
+      .update(pricing_rules)
+      .set({
+        ...(payload.price !== undefined && { price: payload.price }),
+        ...(payload.attributes && { attributes: payload.attributes }),
+      })
+      .where(eq(pricing_rules.id, payload.id))
+      .returning();
 
+    if (updatedRows.length === 0) {
+      throw new Error("Pricing rule not found or update failed");
+    }
+
+    return updatedRows[0];
+  }
   public async getService(id: string) {
-    const [service] = await db.select().from(services).where(eq(services.id, id)).limit(1);
+    const [service] = await db
+      .select()
+      .from(services)
+      .where(eq(services.id, id))
+      .limit(1);
     return service || null;
   }
 
@@ -54,12 +82,15 @@ export class ServicesandPriceService {
   }
 
   public async createMerchantService(payload: CreateMerchantServiceInput) {
-    const [newMerchantService] = await db.insert(merchant_services).values({
-      id: payload.id,
-      merchantId: payload.merchantId,
-      serviceId: payload.serviceId,
-      isActive: payload.isActive ?? true,
-    }).returning();
+    const [newMerchantService] = await db
+      .insert(merchant_services)
+      .values({
+        id: payload.id,
+        merchantId: payload.merchantId,
+        serviceId: payload.serviceId,
+        isActive: payload.isActive ?? true,
+      })
+      .returning();
     return newMerchantService;
   }
 
@@ -67,10 +98,12 @@ export class ServicesandPriceService {
     const [merchantService] = await db
       .select()
       .from(merchant_services)
-      .where(and(
-        eq(merchant_services.merchantId, merchantId),
-        eq(merchant_services.serviceId, serviceId)
-      ))
+      .where(
+        and(
+          eq(merchant_services.merchantId, merchantId),
+          eq(merchant_services.serviceId, serviceId),
+        ),
+      )
       .limit(1);
     return merchantService || null;
   }
@@ -92,13 +125,23 @@ export class ServicesandPriceService {
   }
 
   public async createPricingRule(payload: CreatePricingRuleInput) {
-    const [newPricingRule] = await db.insert(pricing_rules).values({
-      id: payload.id,
-      merchantServiceId: payload.merchantServiceId,
-      price: payload.price,
-      attributes: payload.attributes,
-    }).returning();
-    return newPricingRule;
+    const sizes = ["A3", "A4", "A5"];
+
+    const insertPromises = sizes.map((size, idx) =>
+      db
+        .insert(pricing_rules)
+        .values({
+          id: `pr_${payload.merchantServiceId}_${size}`,
+          merchantServiceId: payload.merchantServiceId,
+          price: `${idx}`,
+          attributes: { ...payload.attributes, paper_size: size },
+        })
+        .returning(),
+    );
+
+    const results = await Promise.all(insertPromises);
+
+    return results.map(([pricingRule]) => pricingRule);
   }
 
   public async getPricingRules(merchantServiceId: string) {
@@ -109,25 +152,35 @@ export class ServicesandPriceService {
   }
 
   public async createAttribute(payload: CreateAttributeInput) {
-    const [newAttribute] = await db.insert(attributes).values({
-      id: payload.id,
-      name: payload.name,
-      description: payload.description,
-    }).returning();
+    const [newAttribute] = await db
+      .insert(attributes)
+      .values({
+        id: payload.id,
+        name: payload.name,
+        description: payload.description,
+      })
+      .returning();
     return newAttribute;
   }
 
   public async getAttribute(id: string) {
-    const [attribute] = await db.select().from(attributes).where(eq(attributes.id, id)).limit(1);
+    const [attribute] = await db
+      .select()
+      .from(attributes)
+      .where(eq(attributes.id, id))
+      .limit(1);
     return attribute || null;
   }
 
   public async createAttributeValue(payload: CreateAttributeValueInput) {
-    const [newValue] = await db.insert(attribute_values).values({
-      id: payload.id,
-      attributeId: payload.attributeId,
-      value: payload.value,
-    }).returning();
+    const [newValue] = await db
+      .insert(attribute_values)
+      .values({
+        id: payload.id,
+        attributeId: payload.attributeId,
+        value: payload.value,
+      })
+      .returning();
     return newValue;
   }
 

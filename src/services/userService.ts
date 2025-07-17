@@ -3,6 +3,7 @@ import { db } from "../configs/db.ts";
 import { eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { getDistanceMatrix } from "./distanceMatrixService.ts";
+
 export interface UserUpdatePayload {
   id: string;
   name: string;
@@ -51,9 +52,9 @@ export class UserService {
   public async getNearestMerchants(lat: string, long: string) {
     const distanceExpression = sql<string>`(
       6371 * acos(
-        cos(radians(${lat})) * cos(radians(cast(${users}.latitude as numeric))) *
-        cos(radians(cast(${users}.longitude as numeric)) - radians(${long})) +
-        sin(radians(${lat})) * sin(radians(cast(${users}.latitude as numeric)))
+        cos(radians(${lat})) * cos(radians(cast(${merchants}.latitude as numeric))) *
+        cos(radians(cast(${merchants}.longitude as numeric)) - radians(${long})) +
+        sin(radians(${lat})) * sin(radians(cast(${merchants}.latitude as numeric)))
       )
     )`;
     console.log({ lat, long });
@@ -61,19 +62,28 @@ export class UserService {
     const nearestMerchantsQuery = db
       .select({
         merchantId: merchants.id,
+        address: merchants.address,
         shopName: merchants.shopName,
         MerchantImages: merchants.shopImages,
+        totalOrders: merchants.totalOrders,
+        totalRevenue: merchants.totalRevenue,
+        pendingOrders: merchants.pendingOrders,
+        acceptedOrders: merchants.acceptedOrders,
         distance: distanceExpression,
-        lat: users.latitude,
-        long: users.longitude,
+        lat: merchants.latitude,
+        long: merchants.longitude,
         average_rating: merchants.average_rating,
         rating_count: merchants.rating_count,
       })
       .from(merchants)
-      .innerJoin(users, sql`${merchants.userId} = ${users.id}`)
       .orderBy(distanceExpression)
       .limit(10);
+
     const nearestMerchants = await nearestMerchantsQuery.execute();
+    console.log(
+      "NEAREST MERCHANTS@@@@@@@@@@@@@@@@@@@@@@@@@@@",
+      nearestMerchants,
+    );
     const distanceMatrix = await getDistanceMatrix(
       [Number(lat), Number(long)],
       nearestMerchants,
