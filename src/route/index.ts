@@ -11,10 +11,12 @@ import orderPriceRouter from './OrderPriceRoutes.ts';
 import fetchReviewRoutes from "./fetchReviewRoutes.ts";
 import fileManagement from "./fileManagement.ts";
 import chatRoutes from "./chatRoutes.ts";
+
 import userManagementRoutes from "./userManagementRoutes.ts";
 import merchantManagementRoutes from "./merchantManagementRoutes.ts";
 import orderManagementRoutes from "./orderManagementRoutes.ts";
 import blogRouter from "./blogRoutes.ts";
+
 
 import { Router } from "express";
 import multer from "multer";
@@ -39,9 +41,10 @@ router.use('/service', servicesandPriceRouter);
 router.use('/order', orderPriceRouter);
 router.use("/fileManagement", fileManagement);
 router.use("/chat", chatRoutes);
+
 router.use("/users", userManagementRoutes);
 router.use("/merchants", merchantManagementRoutes);
-router.use("/orders", orderManagementRoutes);
+router.use("/orders-price", orderManagementRoutes);
 console.log("Mounting blog routes..."); // Add logging
 router.use("/blog", blogRouter);
 
