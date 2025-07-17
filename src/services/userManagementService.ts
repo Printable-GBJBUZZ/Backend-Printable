@@ -1,11 +1,19 @@
 import { db } from "../configs/db.ts";
-import { users, orders } from "../db/schema.ts";
+
+import { users, orders, merchants } from "../db/schema.ts";
+
 import { eq, like, sql } from "drizzle-orm";
 
 export interface UserManagementResponse {
   id: string;
   name: string;
   email: string;
+
+  role: string;
+  status: string;
+  joinDate: Date;
+  orders: number;
+
   phone: string | null;
   state: string | null;
   city: string | null;
@@ -33,6 +41,11 @@ export class UserManagementService {
         id: users.id,
         name: users.name,
         email: users.email,
+
+        role: sql<string>`'user'`.as("role"),
+        status: sql<string>`CASE WHEN EXISTS (SELECT 1 FROM ${orders} WHERE ${orders.userId} = ${users.id} AND ${orders.status} = 'pending') THEN 'Pending' ELSE 'Completed' END`.as("status"),
+        joinDate: users.createdAt,
+
         phone: users.phone,
         state: users.state,
         city: users.city,
@@ -44,6 +57,7 @@ export class UserManagementService {
         createdAt: users.createdAt,
         role: sql<string>`'user'`.as("role"),
         status: sql<string>`CASE WHEN EXISTS (SELECT 1 FROM ${orders} WHERE ${orders.userId} = ${users.id} AND ${orders.status} = 'pending') THEN 'Pending' ELSE 'Completed' END`.as("status"),
+
         orders: sql<number>`(SELECT COUNT(*) FROM ${orders} WHERE ${orders.userId} = ${users.id})`.as("orders"),
       })
       .from(users)
@@ -59,6 +73,11 @@ export class UserManagementService {
         id: users.id,
         name: users.name,
         email: users.email,
+
+        role: sql<string>`'user'`.as("role"),
+        status: sql<string>`CASE WHEN EXISTS (SELECT 1 FROM ${orders} WHERE ${orders.userId} = ${users.id} AND ${orders.status} = 'pending') THEN 'Pending' ELSE 'Completed' END`.as("status"),
+        joinDate: users.createdAt,
+
         phone: users.phone,
         state: users.state,
         city: users.city,
@@ -70,6 +89,7 @@ export class UserManagementService {
         createdAt: users.createdAt,
         role: sql<string>`'user'`.as("role"),
         status: sql<string>`CASE WHEN EXISTS (SELECT 1 FROM ${orders} WHERE ${orders.userId} = ${users.id} AND ${orders.status} = 'pending') THEN 'Pending' ELSE 'Completed' END`.as("status"),
+
         orders: sql<number>`(SELECT COUNT(*) FROM ${orders} WHERE ${orders.userId} = ${users.id})`.as("orders"),
       })
       .from(users)
@@ -85,6 +105,11 @@ export class UserManagementService {
         id: users.id,
         name: users.name,
         email: users.email,
+
+        role: sql<string>`'user'`.as("role"),
+        status: sql<string>`CASE WHEN EXISTS (SELECT 1 FROM ${orders} WHERE ${orders.userId} = ${users.id} AND ${orders.status} = 'pending') THEN 'Pending' ELSE 'Completed' END`.as("status"),
+        joinDate: users.createdAt,
+
         phone: users.phone,
         state: users.state,
         city: users.city,
@@ -96,6 +121,7 @@ export class UserManagementService {
         createdAt: users.createdAt,
         role: sql<string>`'user'`.as("role"),
         status: sql<string>`CASE WHEN EXISTS (SELECT 1 FROM ${orders} WHERE ${orders.userId} = ${users.id} AND ${orders.status} = 'pending') THEN 'Pending' ELSE 'Completed' END`.as("status"),
+
         orders: sql<number>`(SELECT COUNT(*) FROM ${orders} WHERE ${orders.userId} = ${users.id})`.as("orders"),
       })
       .from(users)
@@ -103,6 +129,7 @@ export class UserManagementService {
 
     return result;
   }
+
 
   public async signupUser(payload: SignupPayload): Promise<UserManagementResponse> {
     const { name, email, phone } = payload;
@@ -141,4 +168,5 @@ export class UserManagementService {
       orders: 0,
     };
   }
+
 }

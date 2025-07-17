@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { ChatService } from "../services/chatServices.ts";
+import { ChatService } from "../services/chatService.ts";
 
 const chatService = new ChatService();
 
