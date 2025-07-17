@@ -13,6 +13,14 @@ export interface OrderManagementResponse {
   paymentMethod: string;
   scheduledPrintTime: Date | null;
   createdAt: Date;
+  updatedAt: Date;
+  fulfillmentType: string;
+  state: string | null;
+  city: string | null;
+  address: string | null;
+  latitude: string | null;
+  longitude: string | null;
+  documents: any; // JSONB can be any structure; type it better if needed
 }
 
 export class OrderManagementService {
@@ -29,6 +37,14 @@ export class OrderManagementService {
         paymentMethod: orders.paymentMethod,
         scheduledPrintTime: orders.scheduledPrintTime,
         createdAt: orders.createdAt,
+        updatedAt: orders.updatedAt,
+        fulfillmentType: orders.fulfillmentType,
+        state: orders.state,
+        city: orders.city,
+        address: orders.address,
+        latitude: orders.latitude,
+        longitude: orders.longitude,
+        documents: orders.documents,
       })
       .from(orders)
       .leftJoin(users, eq(orders.userId, users.id))
@@ -50,6 +66,14 @@ export class OrderManagementService {
         paymentMethod: orders.paymentMethod,
         scheduledPrintTime: orders.scheduledPrintTime,
         createdAt: orders.createdAt,
+        updatedAt: orders.updatedAt,
+        fulfillmentType: orders.fulfillmentType,
+        state: orders.state,
+        city: orders.city,
+        address: orders.address,
+        latitude: orders.latitude,
+        longitude: orders.longitude,
+        documents: orders.documents,
       })
       .from(orders)
       .leftJoin(users, eq(orders.userId, users.id))

@@ -1,7 +1,7 @@
 import Pusher from "pusher";
-import { orders } from "../db/schema.ts";
+import { orders, merchants, users } from "../db/schema.ts";
 import { db } from "../configs/db.ts";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 export interface OrderCreatePayload {
   userId: string;
@@ -9,7 +9,7 @@ export interface OrderCreatePayload {
   totalAmount: number;
   paymentMethod: string;
   documents: any;
-  scheduledPrintTime?: Date;
+  scheduledPrintTime?: string | Date; // Accept string or Date
   fulfillmentType?: string; // "delivery" or "takeaway", default "delivery"
   state?: string;
   city?: string;
@@ -19,10 +19,10 @@ export interface OrderCreatePayload {
 }
 
 export interface OrderUpdatePayload {
-  status?: string;
+  status?: "pending" | "printing" | "ready for pickup" | "completed";
   totalAmount?: number;
   paymentMethod?: string;
-  scheduledPrintTime?: Date;
+  scheduledPrintTime?: string | Date; // Accept string or Date
   fulfillmentType?: string;
   state?: string;
   city?: string;
@@ -49,6 +49,7 @@ export class OrderService {
     const result = await db
       .select()
       .from(orders)
+
       .where(eq(orders.id, orderId))
       .limit(1);
     return result.length > 0 ? result[0] : null;
@@ -56,8 +57,13 @@ export class OrderService {
 
   public async getOrdersByMerchantId(merchantId: string) {
     const result = await db
-      .select()
+      .select({
+        userPhoneNumber: users.phone,
+        userEmail: users.email,
+        ...orders,
+      })
       .from(orders)
+      .innerJoin(users, eq(users.id, orders.userId))
       .where(eq(orders.merchantId, merchantId));
     return result;
   }
@@ -78,18 +84,23 @@ export class OrderService {
       .returning();
     const order = result[0];
 
+    await db
+      .update(merchants)
+      .set({
+        totalOrders: sql`${merchants.totalOrders} + 1`,
+        pendingOrders: sql`${merchants.pendingOrders} + 1`,
+        updatedAt: new Date(),
+      })
+      .where(eq(merchants.id, payload.merchantId));
+
     // Trigger a realtime event to notify the merchant
-    await this.pusher.trigger(
-      `private-merchant-${payload.merchantId}`,
+    const res = await this.pusher.trigger(
+      `merchant-${payload.merchantId}`,
       "new-order",
-      {
-        orderId: order.id,
-        userId: payload.userId,
-        totalAmount: payload.totalAmount,
-        documents: payload.documents,
-        scheduledPrintTime: payload.scheduledPrintTime,
-      }
+      { order }
     );
+
+    console.log(res);
 
     return order;
   }
@@ -102,18 +113,30 @@ export class OrderService {
       .returning();
     const order = result[0];
 
+    if (payload.status === "queued") {
+      await db
+        .update(merchants)
+        .set({
+          acceptedOrders: sql`${merchants.acceptedOrders} + 1`,
+          pendingOrders: sql`${merchants.pendingOrders} - 1`,
+          totalRevenue: sql`CAST(${merchants.totalRevenue} AS NUMERIC) + ${order.totalAmount}`,
+          updatedAt: new Date(),
+        })
+        .where(eq(merchants.id, order.merchantId));
+    }
     if (
       payload.status &&
-      (payload.status === "accepted" || payload.status === "declined" || payload.status === "completed" || payload.status === "cancelled")
+      (payload.status === "accepted" ||
+        payload.status === "declined" ||
+        payload.status === "completed" ||
+        payload.status === "queued" ||
+        payload.status === "cancelled" ||
+        payload.status === "printing")
     ) {
-      await this.pusher.trigger(
-        `private-user-${order.userId}`,
-        "order-updated",
-        {
-          orderId: order.id,
-          status: order.status,
-        }
-      );
+      await this.pusher.trigger(`user-${order.userId}`, "order-status", {
+        orderId: order.id,
+        status: order.status,
+      });
     }
 
     return order;
