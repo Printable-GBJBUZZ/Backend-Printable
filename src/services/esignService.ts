@@ -174,16 +174,30 @@ export class EsignService {
       .from(users)
       .where(eq(users.id, payload.signer_userId))
       .limit(1);
-    //check if the viewer is owner
-    const owner = await db
+
+    if (!user) {
+      throw new Error(
+        "User not found for signer_userId: " + payload.signer_userId
+      );
+    }
+
+    // Check if the viewer is the owner
+    const [owner] = await db
       .select({ id: files.ownerId })
       .from(files)
-      .where(eq(files.id, payload.fileId));
+      .where(eq(files.id, payload.fileId))
+      .limit(1);
+
+    if (!owner) {
+      throw new Error("File not found for fileId: " + payload.fileId);
+    }
+
+    const signId = user.signId;
+    const email = user.email;
 
     let info;
 
-    if (owner[0].id === payload.signer_userId) {
-      //get the all signee along with sign request createAt and signedAt
+    if (owner.id === payload.signer_userId) {
       info = await db
         .select({
           fileName: files.fileName,
@@ -212,7 +226,8 @@ export class EsignService {
           signeeSignStatus: signatureStatus.status,
           signeeEmail: signatureStatus.email,
           signedAt: signatureStatus.signedAt,
-          signId: user[0].signId,
+          signId: signatureStatus.signId,
+          ownerId: files.ownerId,
         })
         .from(files)
         .innerJoin(signRequestedFiles, eq(files.id, signRequestedFiles.fileId))
@@ -224,27 +239,16 @@ export class EsignService {
           signatureStatus,
           eq(signatureStatus.requestId, signRequests.id)
         )
-
         .where(
-          and(
-            eq(files.id, payload.fileId),
-            eq(user[0].email, signatureStatus.email) // <-- add your signee check here
-          )
+          and(eq(files.id, payload.fileId), eq(signatureStatus.email, email))
         );
     }
 
-    // else proceed with checking if the user is a valid signerj
-    const result = await db
+    // Simplified query to avoid recursion
+    const [result] = await db
       .select({
         fileUrl: files.fileKey,
-        view: sql<boolean>`true`.as("view"),
-        sign: sql<boolean>`
-        CASE 
-          WHEN ${signatureStatus.email} = ${user.email} 
-          THEN true 
-          ELSE false 
-        END
-      `.as("sign"),
+        email: signatureStatus.email,
         status: signatureStatus.status,
       })
       .from(files)
@@ -255,9 +259,26 @@ export class EsignService {
       )
       .where(eq(files.id, payload.fileId))
       .limit(1);
-    if (info) return { ...result[0], signId: user.signId, info };
 
-    return { ...result[0], signId: user.signId };
+    if (!result) {
+      throw new Error(
+        "No matching signature status found for fileId: " + payload.fileId
+      );
+    }
+
+    const response = {
+      fileUrl: result.fileUrl,
+      view: true,
+      sign: result.email === user.email,
+      status: result.status,
+      signId: user.signId,
+    };
+
+    if (info.length > 0) {
+      return { ...response, info };
+    }
+
+    return response;
   }
 
   async getSignRecordsForUser(
@@ -336,13 +357,14 @@ export class EsignService {
           eq(files.ownerId, payload.requestedBy)
         )
       );
+    console.log(payload);
     if (response.length === 0) {
       return {
-        status: 400,
-        message: "Not eligible to send sign request",
+        msg: "Not eligible to send sign request",
+        success: false,
       };
     }
-
+    console.log("user is owner", payload);
     const res = await db.transaction(async (tx) => {
       // create signRequest record in signRequest table
       const [signRequest] = await tx
@@ -357,6 +379,7 @@ export class EsignService {
         fileId,
         requestId: signRequest.id,
       }));
+      console.log("created record in db", signRequest);
       // console.log(fileEntries);
       // create entry within signRequestFiles of newSignRequests
 
@@ -375,17 +398,19 @@ export class EsignService {
 
       return true;
     });
+    console.log("response", res);
 
     if (res) {
       // send email to all mentioned signee email
       const mail_payload = {
-        from: "Acme <onboarding@resend.dev>",
-        to: [payload.signers_email[payload.signers_email.length - 1]],
+        from: "Acme <noreply@gbjbuzz.com>",
+        to: payload.signers_email,
         subject: "Sign Request Mail",
-        html: `<h1>it works! 
+        html: `<h1>it works!
 link: ${payload.link}
         </h1>`,
       };
+
       return await this.sendSignRequestEmail(mail_payload);
     }
   }

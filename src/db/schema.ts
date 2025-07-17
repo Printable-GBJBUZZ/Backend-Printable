@@ -6,8 +6,8 @@ import {
   timestamp,
   integer,
   jsonb,
-  numeric,
   boolean,
+  numeric,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { relations } from "drizzle-orm";
@@ -21,12 +21,11 @@ export const chatMessages = pgTable("chat_messages", {
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
-
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").unique().notNull(),
-  phone: text("phone").unique(),
+  phone: text("phone"),
   state: text("state"),
   city: text("city"),
   signId: text("sign_id").notNull().unique(),
@@ -39,24 +38,28 @@ export const users = pgTable("users", {
 
 export const merchants = pgTable("merchants", {
   id: text("id").primaryKey(),
-  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
-
+  name: text("name").notNull(),
   email: text("email").unique().notNull(),
   phone: text("phone").unique(),
   state: text("state"),
   city: text("city"),
-
   address: text("address"),
   latitude: text("latitude"),
   longitude: text("longitude"),
-  shopName: text("shop_name").notNull(),
+  shopName: text("shop_name"),
   shopImages: text("images")
     .array()
     .default(sql`ARRAY[]::text[]`),
   average_rating: numeric("average_rating", { precision: 10, scale: 2 })
-    .default(0)
+    .default("0")
     .notNull(),
   rating_count: integer("rating_count").default(0).notNull(),
+  totalOrders: integer("total_orders").default(0).notNull(),
+  totalRevenue: numeric("total_revenue", { precision: 10, scale: 2 })
+    .default("0.00")
+    .notNull(),
+  pendingOrders: integer("pending_orders").default(0).notNull(),
+  acceptedOrders: integer("accepted_orders").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at"),
 });
@@ -67,7 +70,11 @@ export const orders = pgTable("orders", {
   merchantId: text("merchant_id").references(() => merchants.id, {
     onDelete: "cascade",
   }),
-  status: text("status").default("pending").notNull(),
+  status: text("status", {
+    enum: ["pending", "accepted", "denied", "printing", "completed"],
+  })
+    .default("pending")
+    .notNull(),
   totalAmount: integer("total_amount").notNull(),
   paymentMethod: text("payment_method").notNull(),
   scheduledPrintTime: timestamp("scheduled_print_time"),
@@ -204,6 +211,17 @@ export const pricing_rules = pgTable("pricing_rules", {
     .references(() => merchant_services.id, { onDelete: "cascade" }),
   price: numeric("price", { precision: 10, scale: 2 }).notNull(),
   attributes: jsonb("attributes").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// New blogs table
+export const blogs = pgTable("blogs", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  img: text("img").notNull(),
+  description: text("description").notNull(),
+  content: jsonb("content").notNull(), // Store content as JSONB for the array of {title, bulletpoint}
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
