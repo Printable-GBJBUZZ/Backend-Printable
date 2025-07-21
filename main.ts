@@ -15,5 +15,5 @@ app.use(morgan("dev"));
 app.use("/api", Routes);
 
 app.use(errorHandler);
-const PORT = Deno.env.get("PORT") || 5000;
+const PORT = Deno.env.get("PORT") || 8080;
 app.listen(PORT, () => console.log(`Server running on the port ${PORT}`));
