@@ -9,7 +9,7 @@ const app = express();
 // CORS configuration
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? ["https://front-endprintable-tau.vercel.app/print-and-deliver/print" || 'https://yourdomain.com'] // Production: specific domain
+    ? ["https://front-endprintable-tau.vercel.app" || 'https://yourdomain.com'] // Production: specific domain
     : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:8080'], // Development: localhost
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
