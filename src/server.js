@@ -6,7 +6,18 @@ const router = require('./src/route/index');
 
 const app = express();
 
-app.use(cors());
+// CORS configuration
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? ["https://front-endprintable-tau.vercel.app/print-and-deliver/print" || 'https://yourdomain.com'] // Production: specific domain
+    : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:8080'], // Development: localhost
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true, // Allow cookies and authentication headers
+  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
