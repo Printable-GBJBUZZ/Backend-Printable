@@ -16,7 +16,7 @@ import userManagementRoutes from "./userManagementRoutes.ts";
 import merchantManagementRoutes from "./merchantManagementRoutes.ts";
 import orderManagementRoutes from "./orderManagementRoutes.ts";
 import blogRouter from "./blogRoutes.ts";
-
+import payment from "./payment.ts";
 
 import { Router } from "express";
 import multer from "multer";
@@ -47,6 +47,7 @@ router.use("/merchants", merchantManagementRoutes);
 router.use("/orders-price", orderManagementRoutes);
 console.log("Mounting blog routes..."); // Add logging
 router.use("/blog", blogRouter);
+router.use("/payments", payment);
 
 router.post("/pdf/merge", upload.array("file"), mergePDFs);
 router.post("/pdf/split", upload.single("file"), splitPDF);

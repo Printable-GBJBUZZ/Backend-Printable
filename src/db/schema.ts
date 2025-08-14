@@ -8,7 +8,7 @@ import {
   jsonb,
   boolean,
   numeric,
-} from "drizzle-orm/pg-core";
+  varchar} from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { relations } from "drizzle-orm";
 
@@ -89,6 +89,19 @@ export const orders = pgTable("orders", {
   documents: jsonb("documents").notNull(),
 });
 
+export const payments = pgTable("payments", {
+  id: serial("id").primaryKey(),
+  order_id: varchar("order_id").notNull(),
+  user_id: varchar("user_id").notNull(),
+  razorpay_order_id: varchar("razorpay_order_id").notNull(),
+  razorpay_payment_id: varchar("razorpay_payment_id"),
+  razorpay_signature: varchar("razorpay_signature"),
+  amount: numeric("amount").notNull(),
+  currency: varchar("currency").notNull(),
+  status: varchar("status").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
 export const signRequests = pgTable("signature_requests", {
   id: serial("id").primaryKey(),
   requestedBy: text("requested_by")
